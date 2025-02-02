@@ -52,19 +52,28 @@ jobs:
       #   if: matrix.platform != 'ubuntu-latest'
       #   uses: dtolnay/rust-toolchain@stable
 
+      # - name: Package install Ubuntu
+      #   if: matrix.platform == 'ubuntu-latest'
+      #   run: |
+      #     sudo apt update && sudo apt install curl tar xz-utils;
+      #     curl https://ziglang.org/builds/zig-linux-x86_64-0.14.0-dev.3012+3348478fc.tar.xz --output /tmp/zig.tar.xz;
+      #     tar -xf /tmp/zig.tar.xz -C /tmp;
+      #     mkdir /root/.zig;
+      #     cp -r /tmp/zig-linux-x86_64-0.14.0-dev.3012+3348478fc/. /root/.zig/;
+      #     chmod 777 /root/.zig;
+      
       - name: Package install Ubuntu
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          sudo apt update && sudo apt install curl tar xz-utils;
-          curl https://ziglang.org/builds/zig-linux-x86_64-0.14.0-dev.3012+3348478fc.tar.xz --output /tmp/zig.tar.xz;
-          tar -xf /tmp/zig.tar.xz -C /tmp;
-          mkdir /root/.zig;
-          cp -r /tmp/zig-linux-x86_64-0.14.0-dev.3012+3348478fc/. /root/.zig/;
-          chmod 777 /root/.zig;
+          sudo apt update && sudo apt install curl unzip wget;
+          curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
+          export PATH="$HOME/.local/bin:$PATH";
+          cd .ci
+          dagger call linux --src=../ export --path="$(dirname $(pwd))/exe/flexapp";
         
-      - name: Run build
-        run: |
-          zig build -Doptimize=ReleaseSafe
+      # - name: Run build
+      #   run: |
+      #     zig build -Doptimize=ReleaseSafe
 
       - name: Upload Release Asset (x64) Ubuntu
         id: upload-release-asset-x64
@@ -74,7 +83,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.once.outputs.upload_url }}
-          asset_path: ./zig-out/bin/flexapp
+          asset_path: ./exe/flexapp
           asset_name: flexapp
           asset_content_type: application/executable
 
