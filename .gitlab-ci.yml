@@ -1,0 +1,77 @@
+stages:
+  - build
+  - release
+
+flexapp_build_linux:
+  stage: build
+  image: docker:27.4.1-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375/
+  services:
+    - name: docker:27.4.1-dind
+      alias: docker
+  rules:
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v/'
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^flexapp-v/'
+  before_script:
+    - until docker info; do sleep 1; done
+  script:
+    - echo "Building the project..."
+    - apk update
+    - apk add unzip curl wget
+    - curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh
+    - export PATH="$HOME/.local/bin:$PATH"
+    - cd .ci
+    - dagger call linux --src=../ export --path="$(dirname $(pwd))/exe/flexapp"
+  artifacts:
+    paths:
+      - exe/flexapp
+
+flexapp_build_windows:
+  stage: build
+  image: docker:27.4.1-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375/
+  services:
+    - name: docker:27.4.1-dind
+      alias: docker
+  rules:
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v/'
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^flexapp-v/'
+  before_script:
+    - until docker info; do sleep 1; done
+  script:
+    - echo "Building the project..."
+    - apk update
+    - apk add unzip curl wget
+    - curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh
+    - export PATH="$HOME/.local/bin:$PATH"
+    - cd .ci
+    - dagger call windows --src=../ export --path="$(dirname $(pwd))/exe/flexapp.exe"
+  artifacts:
+    paths:
+      - exe/flexapp.exe
+
+flexapp_upload_package:
+  stage: .post
+  image: curlimages/curl:latest
+  rules:
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v/'
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^flexapp-v/'
+  script:
+    - 'curl -k --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file exe/flexapp "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/flexapp/${CI_COMMIT_TAG}/flexapp"'
+    - 'curl -k --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file exe/flexapp.exe "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/flexapp/${CI_COMMIT_TAG}/flexapp.exe"'
+
+flexapp_release_job:
+  stage: .post
+  image: curlimages/curl:latest
+  rules:
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v/'
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^flexapp-v/'
+  script: |
+    echo "Creating a release..."
+    curl -k --header 'Content-Type: application/json' --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+     --data "{ \"name\": \"Release $CI_COMMIT_TAG\", \"tag_name\": \"$CI_COMMIT_TAG\", \"ref\": \"$CI_COMMIT_SHA\", \"description\": \"Release for tag $CI_COMMIT_TAG\", \"assets\": { \"links\": [{ \"name\": \"flexapp\", \"url\": \"${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/flexapp/${CI_COMMIT_TAG}/flexapp\" },{ \"name\": \"flexapp.exe\", \"url\": \"${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/flexapp/${CI_COMMIT_TAG}/flexapp.exe\" }] } }" \
+     --request POST "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases"
