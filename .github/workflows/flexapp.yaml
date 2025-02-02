@@ -41,43 +41,34 @@ jobs:
     strategy:
       matrix:
         #platform: [ubuntu-latest, windows-latest, macos-latest]
-        platform: [ubuntu-latest]
+        platform: [ubuntu-latest, ubuntu-latest]
     
     runs-on: ${{ matrix.platform }}
         
     steps:
       - uses: actions/checkout@v3
-
-      # - name: install Rust
-      #   if: matrix.platform != 'ubuntu-latest'
-      #   uses: dtolnay/rust-toolchain@stable
-
-      # - name: Package install Ubuntu
-      #   if: matrix.platform == 'ubuntu-latest'
-      #   run: |
-      #     sudo apt update && sudo apt install curl tar xz-utils;
-      #     curl https://ziglang.org/builds/zig-linux-x86_64-0.14.0-dev.3012+3348478fc.tar.xz --output /tmp/zig.tar.xz;
-      #     tar -xf /tmp/zig.tar.xz -C /tmp;
-      #     mkdir /root/.zig;
-      #     cp -r /tmp/zig-linux-x86_64-0.14.0-dev.3012+3348478fc/. /root/.zig/;
-      #     chmod 777 /root/.zig;
       
-      - name: Package install Ubuntu
-        if: matrix.platform == 'ubuntu-latest'
+      - name: Dagger Linux
+        if: matrix.platform == 'ubuntu-latest' && strategy.job-index == 0
         run: |
           sudo apt update && sudo apt install curl unzip wget;
           curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
           export PATH="$HOME/.local/bin:$PATH";
           cd .ci
           dagger call linux --src=../ export --path="$(dirname $(pwd))/exe/flexapp";
-        
-      # - name: Run build
-      #   run: |
-      #     zig build -Doptimize=ReleaseSafe
+
+      - name: Dagger Windows
+        if: matrix.platform == 'ubuntu-latest' && strategy.job-index == 1
+        run: |
+          sudo apt update && sudo apt install curl unzip wget;
+          curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
+          export PATH="$HOME/.local/bin:$PATH";
+          cd .ci
+          dagger call windows --src=../ export --path="$(dirname $(pwd))/exe/flexapp.exe";
 
       - name: Upload Release Asset (x64) Ubuntu
         id: upload-release-asset-x64
-        if: matrix.platform == 'ubuntu-latest'
+        if: matrix.platform == 'ubuntu-latest' && strategy.job-index == 0
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -89,24 +80,12 @@ jobs:
 
       - name: Upload Release Asset (x64) Windows
         id: upload-release-asset-x64-windows
-        if: matrix.platform == 'windows-latest'
+        if: matrix.platform == 'ubuntu-latest' && strategy.job-index == 1
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.once.outputs.upload_url }}
-          asset_path: ./zig-out/bin/flexapp.exe
+          asset_path: ./exe/flexapp.exe
           asset_name: flexapp.exe
-          asset_content_type: application/executable
-
-      - name: Upload Release Asset (x64) MacOS
-        id: upload-release-asset-x64-macos
-        if: matrix.platform == 'macos-latest'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.once.outputs.upload_url }}
-          asset_path: ./zig-out/bin/flexapp
-          asset_name: flexapp_darwin
           asset_content_type: application/executable
