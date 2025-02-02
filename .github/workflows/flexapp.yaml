@@ -38,67 +38,70 @@ jobs:
 
   build:
     needs: once
-    strategy:
-      matrix:
-        #platform: [ubuntu-latest, windows-latest, macos-latest]
-        platform: [ubuntu-latest, windows-latest]
+    # strategy:
+    #   matrix:
+    #     #platform: [ubuntu-latest, windows-latest, macos-latest]
+    #     platform: [ubuntu-latest, windows-latest]
     
-    runs-on: ${{ matrix.platform }}
+    runs-on: depot-ubuntu-24.04,dagger=0.15.3
         
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@4
 
       # - name: install Rust
       #   if: matrix.platform != 'ubuntu-latest'
       #   uses: dtolnay/rust-toolchain@stable
 
-      - name: Package install Ubuntu
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          sudo apt update \
-          && sudo apt install libdbus-1-dev pkg-config \
-          zlib1g libevent-dev \
-          build-essential curl wget libssl-dev \
-          libgtk-3-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev \
-          librsvg2-dev libfuse2 libappindicator3-dev libwebkit2gtk-4.1-dev \
-          patchelf
+      # - name: Package install Ubuntu
+      #   if: matrix.platform == 'ubuntu-latest'
+      #   run: |
+      #     sudo apt update \
+      #     && sudo apt install libdbus-1-dev pkg-config \
+      #     zlib1g libevent-dev \
+      #     build-essential curl wget libssl-dev \
+      #     libgtk-3-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev \
+      #     librsvg2-dev libfuse2 libappindicator3-dev libwebkit2gtk-4.1-dev \
+      #     patchelf
         
-      - name: Run build
-        run: |
-          zig build -Doptimize=ReleaseSafe
+      # - name: Run build
+      #   run: |
+      #     zig build -Doptimize=ReleaseSafe
+
+      - name: Call Dagger Function
+        run: dagger -m github.com/Hamm1/flexapp/.ci call linux --src=../ export --path="$(dirname $(pwd))/exe/flexapp"
 
       - name: Upload Release Asset (x64) Ubuntu
         id: upload-release-asset-x64
-        if: matrix.platform == 'ubuntu-latest'
+        # if: matrix.platform == 'ubuntu-latest'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.once.outputs.upload_url }}
-          asset_path: ./zig-out/bin/flexapp
+          asset_path: ./exe/flexapp
           asset_name: flexapp
           asset_content_type: application/executable
 
-      - name: Upload Release Asset (x64) Windows
-        id: upload-release-asset-x64-windows
-        if: matrix.platform == 'windows-latest'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.once.outputs.upload_url }}
-          asset_path: ./zig-out/bin/flexapp.exe
-          asset_name: flexapp.exe
-          asset_content_type: application/executable
+      # - name: Upload Release Asset (x64) Windows
+      #   id: upload-release-asset-x64-windows
+      #   if: matrix.platform == 'windows-latest'
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.once.outputs.upload_url }}
+      #     asset_path: ./zig-out/bin/flexapp.exe
+      #     asset_name: flexapp.exe
+      #     asset_content_type: application/executable
 
-      - name: Upload Release Asset (x64) MacOS
-        id: upload-release-asset-x64-macos
-        if: matrix.platform == 'macos-latest'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.once.outputs.upload_url }}
-          asset_path: ./zig-out/bin/flexapp
-          asset_name: flexapp_darwin
-          asset_content_type: application/executable
+      # - name: Upload Release Asset (x64) MacOS
+      #   id: upload-release-asset-x64-macos
+      #   if: matrix.platform == 'macos-latest'
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.once.outputs.upload_url }}
+      #     asset_path: ./zig-out/bin/flexapp
+      #     asset_name: flexapp_darwin
+      #     asset_content_type: application/executable
