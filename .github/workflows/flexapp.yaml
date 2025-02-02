@@ -57,10 +57,10 @@ jobs:
         run: |
           sudo apt update \
           && sudo apt install curl tar xz-utils \
-          curl https://ziglang.org/builds/{self.zig_version}.tar.xz --output /tmp/zig.tar.xz;
+          curl https://ziglang.org/builds/zig-linux-x86_64-0.14.0-dev.3012+3348478fc.tar.xz --output /tmp/zig.tar.xz;
           tar -xf /tmp/zig.tar.xz -C /tmp;
           mkdir /root/.zig;
-          cp -r /tmp/{self.zig_version}/. /root/.zig/;
+          cp -r /tmp/zig-linux-x86_64-0.14.0-dev.3012+3348478fc/. /root/.zig/;
           chmod 777 /root/.zig;
         
       - name: Run build
