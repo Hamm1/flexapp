@@ -1,0 +1,36 @@
+
+{
+	"name": "flexapp",
+	"build": { "dockerfile": "Dockerfile" },
+
+	"features": {
+        // "ghcr.io/devcontainers/features/python:1": {},
+        "ghcr.io/devcontainers/features/git:1":{},
+		// "ghcr.io/devcontainers/features/powershell:1":{},
+		// "ghcr.io/devcontainers-contrib/features/ansible:2":{},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {}
+		// "ghcr.io/devcontainers/features/rust:1": {}
+    },
+
+	"forwardPorts": [
+		3000
+	],
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"mads-hartmann.bash-ide-vscode",
+				"aaron-bond.better-comments",
+				"ms-azuretools.vscode-docker",
+				"ms-python.debugpy",
+        		"ms-python.isort",
+        		"ms-python.python",
+        		"ms-python.vscode-pylance",
+				"eamodio.gitlens",
+				"PKief.material-icon-theme",
+				"yzhang.markdown-all-in-one",
+				"dagger.dagger",
+				"ziglang.vscode-zig"
+			]
+		}
+	}
+}

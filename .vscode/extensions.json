@@ -1,0 +1,17 @@
+{
+    "recommendations": [
+        "aaron-bond.better-comments",
+        "dagger.dagger",
+        "eamodio.gitlens",
+        "mads-hartmann.bash-ide-vscode",
+        "ms-azuretools.vscode-docker",
+        "ms-python.debugpy",
+        "ms-python.isort",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-vscode.makefile-tools",
+        "pkief.material-icon-theme",
+        "yzhang.markdown-all-in-one",
+        "ziglang.vscode-zig"
+    ]
+}
