@@ -39,6 +39,7 @@ pub fn main() !void {
         \\-i, --installer <str>         Path to package installation binary.
         \\-o, --output <str>            Output location of package build.
         \\-d, --download <str>          Download a file.
+        \\-e, --extra <str>...          Extra commands to pass in for packages.
         \\-v, --version                 Output version information
         \\
     );
@@ -75,9 +76,9 @@ pub fn main() !void {
         if (res.args.packageversion) |p| {
             if (res.args.installer) |i| {
                 if (res.args.output) |o| {
-                    try build_package(n, p, o, i);
+                    try build_package(n, p, o, i, res.args.extra);
                 } else {
-                    try build_package(n, p, "./", i);
+                    try build_package(n, p, "./", i, res.args.extra);
                 }
             } else {
                 std.debug.print("{s}\n", .{"Argument for --installer is required"});
@@ -88,9 +89,9 @@ pub fn main() !void {
     } else if (res.args.packageversion) |p| {
         if (res.args.installer) |i| {
             if (res.args.output) |o| {
-                try build_package("", p, o, i);
+                try build_package("", p, o, i, res.args.extra);
             } else {
-                try build_package("", p, "./", i);
+                try build_package("", p, "./", i, res.args.extra);
             }
         } else {
             std.debug.print("{s}\n", .{"Argument for --installer is required"});
@@ -98,9 +99,9 @@ pub fn main() !void {
     } else if (res.args.installer) |i| {
         if (res.args.packageversion) |p| {
             if (res.args.output) |o| {
-                try build_package("", p, o, i);
+                try build_package("", p, o, i, res.args.extra);
             } else {
-                try build_package("", p, "./", i);
+                try build_package("", p, "./", i, res.args.extra);
             }
         } else {
             std.debug.print("{s}\n", .{"Argument for --packageversion is required"});
@@ -111,26 +112,51 @@ pub fn main() !void {
     }
 }
 
-fn execute(name: []const u8, package_version: []const u8, output: []const u8, installer: []const u8) !void {
+fn execute(name: []const u8, package_version: []const u8, output: []const u8, installer: []const u8, extra: anytype) !void {
     // std.debug.print("{s}\n", .{name});
     if (!(try helper.test_file_path(installer))) {
         std.debug.print("{s} not found...\n", .{installer});
         return;
     }
-    const path = "C:\\program files (x86)\\Liquidware Labs\\FlexApp Packaging Automation\\package-create.exe";
+    const path = "C:\\program files (x86)\\Liquidware Labs\\FlexApp Packaging Automation\\fpa-packager.exe";
     if (!(try helper.test_file_path(path))) {
-        std.debug.print("{s}\n", .{"package-create.exe not found..."});
+        std.debug.print("{s}\n", .{"fpa-packager.exe not found..."});
         return;
     }
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    std.debug.print("{s} {s}\n", .{ "Starting package build for", name });
+    var list = std.ArrayList([]const u8).init(allocator);
+    defer list.deinit();
+
+    try list.append(path);
+    try list.append("package");
+    try list.append("/Name");
+    try list.append(name);
+    try list.append("/PackageVersion");
+    try list.append(package_version);
+    try list.append("/Path");
+    try list.append(output);
+    try list.append("/Installer");
+    try list.append(installer);
+    try list.append("/NoSystemRestore");
+
+    var list2 = std.ArrayList([]const u8).init(allocator);
+    defer list2.deinit();
+    for (extra) |pos| {
+        try list2.append(pos);
+    }
+    if (list2.items.len != 0) {
+        try list.append("/InstallerArgs");
+        for (list2.items) |n|
+            try list.append(n);
+    }
 
     const result = try std.process.Child.run(.{
         .allocator = allocator,
-        .argv = &[_][]const u8{ path, "package", "/Name", name, "/PackageVersion", package_version, "/Path", output, "/Installer", installer, "/NoSystemRestore" },
+        .argv = try list.toOwnedSlice(),
+        .max_output_bytes = 500 * 1024,
     });
     defer {
         allocator.free(result.stdout);
@@ -139,7 +165,7 @@ fn execute(name: []const u8, package_version: []const u8, output: []const u8, in
     switch (result.term) {
         .Exited => |code| {
             if (code == 0) {
-                std.debug.print("Output:\n{s}\n", .{result.stdout});
+                std.debug.print("Output:\nSuccess Code: {}\n", .{code});
             } else {
                 std.debug.print("Process failed with code: {}\n", .{code});
             }
@@ -215,30 +241,23 @@ fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
     return filename;
 }
 
-fn build_package(name: []const u8, package_version: []const u8, output: []const u8, installer: []const u8) !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+fn build_package(name: []const u8, package_version: []const u8, output: []const u8, installer: []const u8, extra: anytype) !void {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    var end_name = name;
 
     if (std.mem.containsAtLeast(u8, installer, 1, "http://") or std.mem.containsAtLeast(u8, installer, 1, "https://")) {
         const filename = try download(allocator, installer);
-        defer allocator.free(filename);
         if (!(std.mem.eql(u8, filename, "unknown.txt"))) {
             if (std.mem.eql(u8, name, "")) {
                 const new_name = try helper.get_last_item(allocator, filename, ".", true);
                 const final_name = try helper.replace(allocator, filename, new_name, "");
                 const final_name2 = try helper.replace(allocator, final_name, "Setup", "");
                 const final_name3 = try helper.replace(allocator, final_name2, "setup", "");
-                defer {
-                    allocator.free(new_name);
-                    allocator.free(final_name);
-                    allocator.free(final_name2);
-                    allocator.free(final_name3);
-                }
-                try execute(final_name, package_version, output, filename);
-                return;
+                end_name = final_name3;
             }
-            try execute(name, package_version, output, filename);
+            try execute(end_name, package_version, output, filename, extra);
         } else {
             std.debug.print("{s}\n", .{"Failed to Download file"});
         }
@@ -250,17 +269,8 @@ fn build_package(name: []const u8, package_version: []const u8, output: []const 
             const final_name4 = try helper.get_last_item(allocator, final_name3, "\\", false);
             const final_name5 = try helper.replace(allocator, final_name4, "Setup", "");
             const final_name6 = try helper.replace(allocator, final_name5, "setup", "");
-            defer {
-                allocator.free(final_name);
-                allocator.free(final_name2);
-                allocator.free(final_name3);
-                allocator.free(final_name4);
-                allocator.free(final_name5);
-                allocator.free(final_name6);
-            }
-            try execute(final_name6, package_version, output, installer);
-            return;
+            end_name = final_name6;
         }
-        try execute(name, package_version, output, installer);
+        try execute(end_name, package_version, output, installer, extra);
     }
 }
