@@ -9,7 +9,7 @@
   tasks:
     - name: Copy file with owner and permissions
       ansible.builtin.get_url:
-        url: { url }
+        url: "{{ url }}"
         dest: C:\temp\flexapp.exe
         validate_certs: false
         mode: '0644'
