@@ -17,12 +17,12 @@
     - name: Run flexapp cli for Chrome
       become: true
       become_user: "{{ user }}"
-      ansible.windows.win_shell:
+      ansible.windows.win_powershell:
         cd c:/temp;
         $find = (C:/windows/System32/curl.exe "https://www.whatismybrowser.com/guides/the-latest-version/chrome" | select-string "<td>")[1];
         $version = $find.ToString().Replace(" ","").Replace("<td>","").Replace("</td>","");
         ./flexapp.exe -i https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi -p $version \
-        -o {{ server }} -n Chrome -e "/quiet";
+        -o {{ server }} -n "Chrome_$($version)" -e "/quiet";
     - name: Delete existing dist folder
       ansible.windows.win_powershell:
         script: |
