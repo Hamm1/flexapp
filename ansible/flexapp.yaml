@@ -8,12 +8,12 @@
     ansible_shell_type: cmd
   tasks:
     - name: Copy file with owner and permissions
-      ansible.builtin.get_url:
-        url: "{{ url }}"
-        dest: C:\temp\flexapp.exe
-        validate_certs: false
-        mode: '0644'
-        force: true
+      become: true
+      become_user: "{{ user }}"
+      ansible.windows.win_shell:
+        cd c:/temp;
+        mkdir c:/temp > null 2>&1;
+        C:/windows/System32/curl.exe -k {{ url }} --output C:/temp/flexapp.exe;
     - name: Run flexapp cli for Chrome
       become: true
       become_user: "{{ user }}"
