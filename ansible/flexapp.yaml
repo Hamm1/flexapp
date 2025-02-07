@@ -17,7 +17,7 @@
     - name: Run flexapp cli for Chrome
       become: true
       become_user: "{{ user }}"
-      ansible.windows.win_powershell:
+      ansible.windows.win_shell:
         cd c:/temp;
         $find = (C:/windows/System32/curl.exe "https://www.whatismybrowser.com/guides/the-latest-version/chrome" | select-string "<td>")[1];
         $version = $find.ToString().Replace(" ","").Replace("<td>","").Replace("</td>","");
