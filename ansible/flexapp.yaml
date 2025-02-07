@@ -1,0 +1,26 @@
+- name: Flexapp
+  hosts: all
+  gather_facts: false
+  become_method: ansible.builtin.runas
+  vars:
+    ansible_remote_tmp: c:/temp
+    ansible_connection: ssh
+    ansible_shell_type: cmd
+  tasks:
+    - name: Copy file with owner and permissions
+      ansible.builtin.get_url:
+        url: { url }
+        dest: C:\temp\flexapp.exe
+        mode: '0644'
+        force: true
+    - name: Run flexapp cli for Chrome
+      become: true
+      become_user: "{{ user }}"
+      ansible.windows.win_shell:
+        cd c:/temp;
+        ./flexapp.exe -i https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi -p 132.1.245.1111 \
+        -o {{ server }} -n Chrome -e "/quiet";
+    - name: Delete existing dist folder
+      ansible.windows.win_powershell:
+        script: |
+          Remove-item C:\temp\flexapp.exe -force -verbose
