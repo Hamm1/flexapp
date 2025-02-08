@@ -73,18 +73,22 @@ pub fn main() !void {
         defer allocator.free(filename);
     }
     if (res.args.name) |n| {
-        if (res.args.packageversion) |p| {
-            if (res.args.installer) |i| {
+        if (res.args.installer) |i| {
+            if (res.args.packageversion) |p| {
                 if (res.args.output) |o| {
                     try build_package(n, p, o, i, res.args.extra);
                 } else {
                     try build_package(n, p, "./", i, res.args.extra);
                 }
             } else {
-                std.debug.print("{s}\n", .{"Argument for --installer is required"});
+                if (res.args.output) |o| {
+                    try build_package(n, "0.0.0.0", o, i, res.args.extra);
+                } else {
+                    try build_package(n, "0.0.0.0", "./", i, res.args.extra);
+                }
             }
         } else {
-            std.debug.print("{s}\n", .{"Argument for --packageversion is required"});
+            std.debug.print("{s}\n", .{"Argument for --installer is required"});
         }
     } else if (res.args.packageversion) |p| {
         if (res.args.installer) |i| {
@@ -104,7 +108,11 @@ pub fn main() !void {
                 try build_package("", p, "./", i, res.args.extra);
             }
         } else {
-            std.debug.print("{s}\n", .{"Argument for --packageversion is required"});
+            if (res.args.output) |o| {
+                try build_package("", "0.0.0.0", o, i, res.args.extra);
+            } else {
+                try build_package("", "0.0.0.0", "./", i, res.args.extra);
+            }
         }
     }
     for (res.positionals) |pos| {
