@@ -26,12 +26,23 @@ build_windows:
 build_windows_safe:
 	zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSafe
 
-dagger_windows:
+clean:
 ifeq ($(detected_OS),Linux)
-	cd .ci && sh dagger call windows --src=../ export --path=$(cwd)/out/flexapp.exe
+	rm -rf ./.flox/cache ./.flox/run ./.flox/log zig-out .zig-cache out
 endif
 ifeq ($(detected_OS),Darwin)
-	cd .ci && sh dagger call windows --src=../ export --path=$(cwd)/out/flexapp.exe
+	rm -rf ./.flox/cache ./.flox/run ./.flox/log zig-out .zig-cache out
+endif
+ifeq ($(detected_OS),Windows)
+	powershell -Command "rm -Recurse -Force -ErrorAction SilentlyContinue './.flox/cache','./.flox/run','./.flox/log','zig-out','.zig-cache','out'"
+endif
+
+dagger_windows:
+ifeq ($(detected_OS),Linux)
+	cd .ci && dagger call windows --src=../ export --path=$(cwd)/out/flexapp.exe
+endif
+ifeq ($(detected_OS),Darwin)
+	cd .ci && dagger call windows --src=../ export --path=$(cwd)/out/flexapp.exe
 endif
 ifeq ($(detected_OS),Windows)
 	cd .ci && powershell -Command "\
@@ -40,10 +51,10 @@ endif
 
 dagger_linux:
 ifeq ($(detected_OS),Linux)
-	cd .ci && sh dagger call linux --src=../ export --path=$(cwd)/out/flexapp
+	cd .ci && dagger call linux --src=../ export --path=$(cwd)/out/flexapp
 endif
 ifeq ($(detected_OS),Darwin)
-	cd .ci && sh dagger call linux --src=../ export --path=$(cwd)/out/flexapp
+	cd .ci && dagger call linux --src=../ export --path=$(cwd)/out/flexapp
 endif
 ifeq ($(detected_OS),Windows)
 	cd .ci && powershell -Command "\
