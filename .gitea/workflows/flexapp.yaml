@@ -1,0 +1,89 @@
+name: flexapp
+
+on:
+  push:
+    # branches:
+    #   - 'main'
+    tags:
+      - 'v*'
+  # pull_request:
+    # branches:
+    #   - '**'
+  workflow_dispatch:
+    inputs:
+      tags: 
+        description: 'testing a tag'
+        required: true
+        type: string
+
+jobs:
+  once:
+    name: Create GitHub release
+    runs-on: 'ubuntu-latest'
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Automated Release by GitHub Action CI
+          draft: false
+          prerelease: false
+
+  build:
+    needs: once
+    strategy:
+      matrix:
+        os: [linux, windows]
+        platform: [ubuntu-latest]
+    
+    runs-on: ${{ matrix.platform }}
+        
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Dagger Linux
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt update && sudo apt install curl unzip wget;
+          curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
+          export PATH="$HOME/.local/bin:$PATH";
+          cd .ci
+          dagger call linux --src=../ export --path="$(dirname $(pwd))/exe/flexapp";
+
+      - name: Dagger Windows
+        if: matrix.os == 'windows'
+        run: |
+          sudo apt update && sudo apt install curl unzip wget;
+          curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
+          export PATH="$HOME/.local/bin:$PATH";
+          cd .ci
+          dagger call windows --src=../ export --path="$(dirname $(pwd))/exe/flexapp.exe";
+
+      - name: Upload Release Asset (x64) Ubuntu
+        id: upload-release-asset-x64
+        if: matrix.os == 'linux'
+        run: |
+          curl --fail-with-body \
+            --url "${{ needs.once.outputs.upload_url }}?name=flexapp" \
+            --header "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+            --header "Content-Type: application/octet-stream" \
+            --upload-file "./exe/flexapp" \
+            -X POST
+
+      - name: Upload Release Asset (x64) Windows
+        id: upload-release-asset-x64-windows
+        if: matrix.os == 'windows'
+        run: |
+          curl --fail-with-body \
+            --url "${{ needs.once.outputs.upload_url }}?name=flexapp.exe" \
+            --header "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+            --header "Content-Type: application/octet-stream" \
+            --upload-file "./exe/flexapp.exe" \
+            -X POST

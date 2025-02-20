@@ -1,0 +1,9 @@
+# Apps
+- Powershell
+  - https://github.com/PowerShell/PowerShell/releases/download/v7.5.0/PowerShell-7.5.0-win-x64.msi
+- Git
+  - https://github.com/git-for-windows/git/releases/download/v2.48.1.windows.1/Git-2.48.1-64-bit.exe
+- Chrome
+  - https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi
+- VSCode
+  - https://vscode.download.prss.microsoft.com/dbazure/download/stable/e54c774e0add60467559eb0d1e229c6452cf8447/VSCodeSetup-x64-1.97.2.exe

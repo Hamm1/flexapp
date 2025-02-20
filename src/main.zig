@@ -221,6 +221,9 @@ fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
             // Consume first iterator
             _ = filename1.first();
             filename = filename1.rest();
+            // Check for more stuff in filename
+            var filename2 = std.mem.splitSequence(u8, filename, ";");
+            filename = filename2.first();
             break;
         }
     }
