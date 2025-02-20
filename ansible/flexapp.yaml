@@ -20,7 +20,7 @@
       ansible.windows.win_shell:
         cd c:/temp;
         $find = (C:/windows/System32/curl.exe https://versionhistory.googleapis.com/v1/chrome/platforms/win64/channels/stable/versions | convertfrom-json);
-        $version = $find.versions.version[0]
+        $version = $find.versions.version[0];
         ./flexapp.exe -i https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi -p $version \
         -o {{ server }} -n "Chrome_$($version)" -e "/quiet";
     - name: Delete existing dist folder
