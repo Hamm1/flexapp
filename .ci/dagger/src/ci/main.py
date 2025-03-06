@@ -4,7 +4,7 @@ from dagger import dag, function, object_type
 @object_type
 class Ci:
     
-    zig_version = "zig-linux-x86_64-0.14.0-dev.3012+3348478fc"
+    zig_version = "zig-linux-x86_64-0.14.0"
 
     @function
     async def linux(self, src: dagger.Directory) -> dagger.File:   

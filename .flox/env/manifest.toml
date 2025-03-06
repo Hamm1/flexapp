@@ -15,9 +15,9 @@ zsh.pkg-path = "zsh"
 starship.pkg-path = "starship"
 docker.pkg-path = "docker"
 zig.pkg-path = "zig"
-zig.version = "0.13.0"
+zig.version = "0.14.0"
 zls.pkg-path = "zls"
-zls.version = "0.13.0"
+zls.version = "0.14.0"
 # hello.pkg-path = "hello"
 # nodejs = { version = "^20.15.1", pkg-path = "nodejs" }
 

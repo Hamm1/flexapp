@@ -8,8 +8,8 @@ RUN curl https://starship.rs/install.sh --output ./starship.sh;chmod +x ./starsh
 
 RUN curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh
 
-ARG ZIG_VERSION=zig-linux-x86_64-0.14.0-dev.3012+3348478fc
-ARG ZLS_VERSION=0.13.0
+ARG ZIG_VERSION=zig-linux-x86_64-0.14.0
+ARG ZLS_VERSION=0.14.0
 ARG ZIG_DOWNLOAD=https://ziglang.org/builds/$ZIG_VERSION.tar.xz
 # ARG ZIG_DOWNLOAD=https://ziglang.org/download/$ZLS_VERSION/$ZIG_VERSION.tar.xz
 RUN curl $ZIG_DOWNLOAD --output /tmp/zig.tar.xz; tar -xf /tmp/zig.tar.xz -C /tmp; mkdir /root/.zig; cp -r /tmp/$ZIG_VERSION/.  /root/.zig/; chmod 777  /root/.zig
