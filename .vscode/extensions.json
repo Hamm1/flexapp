@@ -1,12 +1,13 @@
 {
     "recommendations": [
         "aaron-bond.better-comments",
+        "astral-sh.ty",
+        "charliermarsh.ruff",
         "dagger.dagger",
-        "eamodio.gitlens",
+        "waderyan.gitblame",
         "mads-hartmann.bash-ide-vscode",
-        "ms-azuretools.vscode-docker",
+        "ms-azuretools.vscode-containers",
         "ms-python.debugpy",
-        "ms-python.isort",
         "ms-python.python",
         "ms-python.vscode-pylance",
         "ms-vscode.makefile-tools",

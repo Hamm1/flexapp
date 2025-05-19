@@ -1,4 +1,4 @@
-name: flexapp
+name: smdc_portal
 
 on:
   push:

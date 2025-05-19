@@ -26,8 +26,8 @@ const CURRENT_VERSION = Version{
 };
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
 
     // First we specify what parameters our program can take.
     // We can use `parseParamsComptime` to parse a string into an array of `Param(Help)`
@@ -50,7 +50,7 @@ pub fn main() !void {
     var diag = clap.Diagnostic{};
     var res = clap.parse(clap.Help, &params, clap.parsers.default, .{
         .diagnostic = &diag,
-        .allocator = gpa.allocator(),
+        .allocator = arena.allocator(),
     }) catch |err| {
         // Report useful error and exit
         diag.report(std.io.getStdErr().writer(), err) catch {};
@@ -68,7 +68,7 @@ pub fn main() !void {
         std.debug.print("file exists = {}\n", .{try helper.test_file_path(f)});
     }
     if (res.args.download) |d| {
-        const allocator = gpa.allocator();
+        const allocator = arena.allocator();
         const filename = try download(allocator, d);
         defer allocator.free(filename);
     }
@@ -190,7 +190,7 @@ fn execute(name: []const u8, package_version: []const u8, output: []const u8, in
     }
 }
 
-fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
+pub fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
     std.debug.print("{s} {s}\n", .{ "Starting download for", url });
     var client = std.http.Client{ .allocator = allocator };
     defer client.deinit();
@@ -198,9 +198,11 @@ fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
     const uri = try std.Uri.parse(url);
     const buf = try allocator.alloc(u8, 1024 * 1024 * 4);
     defer allocator.free(buf);
-    var req = try client.open(.GET, uri, .{
+    var req = client.open(.GET, uri, .{
         .server_header_buffer = buf,
-    });
+    }) catch {
+        return "unknown.txt";
+    };
     defer req.deinit();
 
     try req.send();

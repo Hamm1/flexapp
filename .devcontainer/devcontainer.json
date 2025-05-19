@@ -25,7 +25,7 @@
         		"ms-python.isort",
         		"ms-python.python",
         		"ms-python.vscode-pylance",
-				"eamodio.gitlens",
+				"waderyan.gitblame",
 				"PKief.material-icon-theme",
 				"yzhang.markdown-all-in-one",
 				"dagger.dagger",

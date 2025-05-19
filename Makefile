@@ -14,6 +14,9 @@ else
 cwd := $(shell sh -c '${PWD} || pwd || echo Unknown')
 endif
 
+test:
+	zig test src/root.zig
+
 build:
 	zig build -Doptimize=ReleaseFast
 
