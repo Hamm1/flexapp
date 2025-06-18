@@ -11,6 +11,7 @@
         "ms-python.python",
         "ms-python.vscode-pylance",
         "ms-vscode.makefile-tools",
+        "nefrob.vscode-just-syntax",
         "pkief.material-icon-theme",
         "yzhang.markdown-all-in-one",
         "ziglang.vscode-zig"

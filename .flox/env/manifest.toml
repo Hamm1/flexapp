@@ -15,7 +15,7 @@ zsh.pkg-path = "zsh"
 starship.pkg-path = "starship"
 docker.pkg-path = "docker"
 zig.pkg-path = "zig"
-zig.version = "0.14.0"
+zig.version = "0.14.1"
 zls.pkg-path = "zls"
 zls.version = "0.14.0"
 # hello.pkg-path = "hello"
@@ -36,7 +36,7 @@ zls.version = "0.14.0"
 [hook]
 on-activate = '''
     git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions;
-    curl -L https://github.com/dagger/dagger/releases/download/v0.15.3/dagger_v0.15.3_linux_amd64.tar.gz --output ~/dagger.tar.gz;
+    curl -L https://github.com/dagger/dagger/releases/download/v0.18.8/dagger_v0.18.8_linux_amd64.tar.gz --output ~/dagger.tar.gz;
     mkdir ~/.local/bin;
     tar -xf ~/dagger.tar.gz -C ~/.local/bin;
 '''

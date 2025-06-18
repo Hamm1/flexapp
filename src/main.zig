@@ -28,14 +28,14 @@ const CURRENT_VERSION = Version{
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-
+    
     // First we specify what parameters our program can take.
     // We can use `parseParamsComptime` to parse a string into an array of `Param(Help)`
     const params = comptime clap.parseParamsComptime(
         \\-h, --help                    Display this help and exit.
         \\-n, --name <str>              Name of package that will be created.
         \\-p, --packageversion <str>    Version of the package to be created
-        \\-f, --file <str>              Test is file exists.
+        \\-f, --file <str>              Test if file exists.
         \\-i, --installer <str>         Path to package installation binary.
         \\-o, --output <str>            Output location of package build.
         \\-d, --download <str>          Download a file.
