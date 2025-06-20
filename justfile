@@ -19,9 +19,9 @@ build_windows_safe:
 	zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSafe
 
 clean := if os_family() == "windows" { 
-		"rm -Recurse -Force -ErrorAction SilentlyContinue './.flox/cache','./.flox/run','./.flox/log','zig-out','.zig-cache','out'"
+		"rm -Recurse -Force -ErrorAction SilentlyContinue './.flox/cache','./.flox/run','./.flox/log', './.flox/env/manifest.lock','zig-out','.zig-cache','out'"
 	} else { 
-		"rm -rf ./.flox/cache ./.flox/run ./.flox/log zig-out .zig-cache out"
+		"rm -rf ./.flox/cache ./.flox/run ./.flox/log ./.flox/env/manifest.lock zig-out .zig-cache out"
 	}
 clean:
 	{{ clean }}
@@ -50,7 +50,7 @@ flox:
 flox_delete:
 	{{ sudo }} docker rm -f flox
 
-workspace := if os_family() == "windows" { `{{invocation_directory()}}` } else { "/workspace/flexapp" }
+workspace := if os_family() == "windows" { "{{invocation_directory()}}" } else { "/workspace/flexapp" }
 code_server:
 	({{ sudo }} docker run -v /var/run/docker.sock:/var/run/docker.sock -v {{invocation_directory()}}:{{ workspace }} --name=code_server -p 443:443 -d matthewhambright/code_server:latest) || (echo "Container Exists")
 

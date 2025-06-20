@@ -8,11 +8,14 @@ RUN curl https://starship.rs/install.sh --output ./starship.sh;chmod +x ./starsh
 
 RUN curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh
 
-ARG ZIG_VERSION=zig-linux-x86_64-0.14.0
+RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/bin
+
+ARG ZIG_VERSION_BINARY=zig-x86_64-linux-0.14.1
+ARG ZIG_VERSION=0.14.1
 ARG ZLS_VERSION=0.14.0
 # ARG ZIG_DOWNLOAD=https://ziglang.org/builds/$ZIG_VERSION.tar.xz
-ARG ZIG_DOWNLOAD=https://ziglang.org/download/$ZLS_VERSION/$ZIG_VERSION.tar.xz
-RUN curl $ZIG_DOWNLOAD --output /tmp/zig.tar.xz; tar -xf /tmp/zig.tar.xz -C /tmp; mkdir /root/.zig; cp -r /tmp/$ZIG_VERSION/.  /root/.zig/; chmod 777  /root/.zig
+ARG ZIG_DOWNLOAD=https://ziglang.org/download/$ZIG_VERSION/$ZIG_VERSION_BINARY.tar.xz
+RUN curl $ZIG_DOWNLOAD --output /tmp/zig.tar.xz; tar -xf /tmp/zig.tar.xz -C /tmp; mkdir /root/.zig; cp -r /tmp/$ZIG_VERSION_BINARY/.  /root/.zig/; chmod 777  /root/.zig
 RUN curl -L https://github.com/zigtools/zls/releases/download/$ZLS_VERSION/zls-x86_64-linux.tar.xz --output /root/zls.tar.xz; tar -xf  /root/zls.tar.xz -C  /root; cp -r  /root/zls  /root/.zig/; chmod 777  /root/.zig/zls; rm -rf  /root/zls.tar.xz  /root/bin /root/zls
 RUN curl https://raw.githubusercontent.com/Hamm1/devbox/main/zshrc --output ~/.zshrc
 RUN git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions

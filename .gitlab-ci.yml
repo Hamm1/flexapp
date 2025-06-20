@@ -9,17 +9,12 @@ flexapp_testing:
     - if: '$CI_COMMIT_BRANCH == "main"'
   script:
     - echo "Testing the project..."
-    - apt update
-    - apt install curl unzip xz-utils -y
-    - ZIG_VERSION=zig-linux-x86_64-0.14.0
-    - ZLS_VERSION=0.14.0
-    - ZIG_DOWNLOAD=https://ziglang.org/download/$ZLS_VERSION/$ZIG_VERSION.tar.xz
-    - curl $ZIG_DOWNLOAD --output /tmp/zig.tar.xz
-    - tar -xf /tmp/zig.tar.xz -C /tmp
-    - mkdir /root/.zig
-    - cp -r /tmp/$ZIG_VERSION/. /root/.zig/
-    - chmod 777 /root/.zig
-    - /root/.zig/zig test src/root.zig -OReleaseSafe
+    - apk update
+    - apk add unzip curl wget
+    - curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh
+    - export PATH="$HOME/.local/bin:$PATH"
+    - cd .ci
+    - dagger call tests --src=../
 
 flexapp_build_linux:
   stage: build
