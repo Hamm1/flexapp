@@ -1,1 +1,1 @@
-Upgraded dependancies and CI
+Upgraded dependancies and added some more tests.

@@ -8,7 +8,7 @@ class Ci:
     zig_binary = f"zig-x86_64-linux-{zig_version}"
 
     @function
-    async def tests(self, src: dagger.Directory):
+    async def tests(self, src: dagger.Directory) -> dagger.Container:
         return (
             dag.container()
             .from_("ubuntu:24.04")
