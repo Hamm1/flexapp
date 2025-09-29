@@ -10,14 +10,14 @@ version = 1
 # the `[install]` section.
 [install]
 python3.pkg-path = "python3"
-gnumake.pkg-path = "gnumake"
+just.pkg-path = "just"
 zsh.pkg-path = "zsh"
 starship.pkg-path = "starship"
 docker.pkg-path = "docker"
 zig.pkg-path = "zig"
-zig.version = "0.14.1"
+zig.version = "0.15.1"
 zls.pkg-path = "zls"
-zls.version = "0.14.0"
+zls.version = "0.15.0"
 # hello.pkg-path = "hello"
 # nodejs = { version = "^20.15.1", pkg-path = "nodejs" }
 

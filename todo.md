@@ -1,9 +1,11 @@
 # Apps
 - Powershell
-  - https://github.com/PowerShell/PowerShell/releases/download/v7.5.1/PowerShell-7.5.1-win-x64.msi
+  - https://github.com/PowerShell/PowerShell/releases/download/v7.5.3/PowerShell-7.5.3-win-x64.msi
 - Git
-  - https://github.com/git-for-windows/git/releases/download/v2.49.0.windows.1/Git-2.49.0-64-bit.exe
+  - https://github.com/git-for-windows/git/releases/download/v2.51.0.windows.1/Git-2.51.0-64-bit.exe
 - Chrome
   - https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi
 - VSCode
-  - https://vscode.download.prss.microsoft.com/dbazure/download/stable/848b80aeb52026648a8ff9f7c45a9b0a80641e2e/VSCodeSetup-x64-1.100.2.exe
+  - https://code.visualstudio.com/sha/download?build=stable&os=win32-x64
+- PuTTY
+  - https://the.earth.li/~sgtatham/putty/latest/w64/putty-64bit-0.83-installer.msi

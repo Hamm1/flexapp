@@ -1,1 +1,1 @@
-Upgraded dependancies and added some more tests.
+Fixed issue with downloads not always downloading the whole file.

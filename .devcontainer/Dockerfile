@@ -10,9 +10,9 @@ RUN curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/bin
 
-ARG ZIG_VERSION_BINARY=zig-x86_64-linux-0.14.1
-ARG ZIG_VERSION=0.14.1
-ARG ZLS_VERSION=0.14.0
+ARG ZIG_VERSION_BINARY=zig-x86_64-linux-0.15.1
+ARG ZIG_VERSION=0.15.1
+ARG ZLS_VERSION=0.15.0
 # ARG ZIG_DOWNLOAD=https://ziglang.org/builds/$ZIG_VERSION.tar.xz
 ARG ZIG_DOWNLOAD=https://ziglang.org/download/$ZIG_VERSION/$ZIG_VERSION_BINARY.tar.xz
 RUN curl $ZIG_DOWNLOAD --output /tmp/zig.tar.xz; tar -xf /tmp/zig.tar.xz -C /tmp; mkdir /root/.zig; cp -r /tmp/$ZIG_VERSION_BINARY/.  /root/.zig/; chmod 777  /root/.zig

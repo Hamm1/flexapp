@@ -3,7 +3,6 @@
         "aaron-bond.better-comments",
         "astral-sh.ty",
         "charliermarsh.ruff",
-        "dagger.dagger",
         "waderyan.gitblame",
         "mads-hartmann.bash-ide-vscode",
         "ms-azuretools.vscode-containers",

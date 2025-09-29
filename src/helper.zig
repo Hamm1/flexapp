@@ -1,21 +1,21 @@
 const std = @import("std");
 
 pub fn replace(allocator: std.mem.Allocator, haystack: []const u8, needle: []const u8, replacement: []const u8) ![]u8 {
-    var result = std.ArrayList(u8).init(allocator);
-    defer result.deinit();
+    var result: std.ArrayList(u8) = .empty;
+    defer result.deinit(allocator);
     var i: usize = 0;
     while (i < haystack.len) {
         if (std.mem.startsWith(u8, haystack[i..], needle)) {
             for (replacement) |c| {
-                try result.append(c);
+                try result.append(allocator, c);
             }
             i += needle.len;
         } else {
-            try result.append(haystack[i]);
+            try result.append(allocator, haystack[i]);
             i += 1;
         }
     }
-    return result.toOwnedSlice();
+    return result.toOwnedSlice(allocator);
 }
 
 pub fn test_file_path(path: []const u8) !bool {
@@ -28,20 +28,20 @@ pub fn test_file_path(path: []const u8) !bool {
 }
 
 pub fn concat(allocator: std.mem.Allocator, current: []const u8, added: []const u8) ![]u8 {
-    var result = std.ArrayList(u8).init(allocator);
-    defer result.deinit();
+    var result: std.ArrayList(u8) = .empty;
+    defer result.deinit(allocator);
     var i: usize = 0;
     while (i < current.len) {
-        try result.append(current[i]);
+        try result.append(allocator, current[i]);
         i += 1;
     }
     i = 0;
     while (i < added.len) {
-        try result.append(added[i]);
+        try result.append(allocator, added[i]);
         i += 1;
     }
 
-    return result.toOwnedSlice();
+    return result.toOwnedSlice(allocator);
 }
 
 pub fn get_last_item(allocator: std.mem.Allocator, name: []const u8, delimiter: []const u8, add_delimiter_back: bool) ![]u8 {

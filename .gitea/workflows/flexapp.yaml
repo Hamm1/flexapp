@@ -17,9 +17,23 @@ on:
         type: string
 
 jobs:
+  testing:
+    strategy:
+      matrix:
+        optimize: [ReleaseSafe, ReleaseFast]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: master
+          cache-key: ${{ matrix.optimize }}
+      - run: zig test src/root.zig -O${{ matrix.optimize }}
+
   once:
     name: Create GitHub release
     runs-on: 'ubuntu-latest'
+    needs: testing
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:

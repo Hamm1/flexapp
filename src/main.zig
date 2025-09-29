@@ -9,12 +9,8 @@ const Version = struct {
 
     pub fn format(
         self: Version,
-        comptime fmt: []const u8,
-        options: std.fmt.FormatOptions,
         writer: anytype,
     ) !void {
-        _ = fmt;
-        _ = options;
         try writer.print("{d}.{d}.{d}", .{ self.major, self.minor, self.patch });
     }
 };
@@ -28,7 +24,7 @@ const CURRENT_VERSION = Version{
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    
+
     // First we specify what parameters our program can take.
     // We can use `parseParamsComptime` to parse a string into an array of `Param(Help)`
     const params = comptime clap.parseParamsComptime(
@@ -53,24 +49,23 @@ pub fn main() !void {
         .allocator = arena.allocator(),
     }) catch |err| {
         // Report useful error and exit
-        diag.report(std.io.getStdErr().writer(), err) catch {};
+        try diag.reportToFile(.stderr(), err);
         return err;
     };
     defer res.deinit();
 
     if (res.args.help != 0) {
-        return clap.help(std.io.getStdErr().writer(), clap.Help, &params, .{});
+        return clap.helpToFile(.stderr(), clap.Help, &params, .{});
     }
     if (res.args.version != 0) {
-        std.debug.print("{}\n", .{CURRENT_VERSION});
+        std.debug.print("{f}\n", .{CURRENT_VERSION});
     }
     if (res.args.file) |f| {
         std.debug.print("file exists = {}\n", .{try helper.test_file_path(f)});
     }
     if (res.args.download) |d| {
         const allocator = arena.allocator();
-        const filename = try download(allocator, d);
-        defer allocator.free(filename);
+        _ = try download(allocator, d);
     }
     if (res.args.name) |n| {
         if (res.args.installer) |i| {
@@ -120,50 +115,56 @@ pub fn main() !void {
     }
 }
 
-fn execute(name: []const u8, package_version: []const u8, output: []const u8, installer: []const u8, extra: anytype) !void {
+pub const ExecuteError = error{
+    InstallerNotFound,
+    FpaPackagerNotFound,
+    ProcessFailed,
+} || std.process.Child.RunError || std.mem.Allocator.Error || std.fs.File.OpenError;
+
+pub fn execute(name: []const u8, package_version: []const u8, output: []const u8, installer: []const u8, extra: anytype) ExecuteError![]const u8 {
     // std.debug.print("{s}\n", .{name});
     if (!(try helper.test_file_path(installer))) {
         std.debug.print("{s} not found...\n", .{installer});
-        return;
+        return ExecuteError.InstallerNotFound;
     }
     const path = "C:\\program files (x86)\\Liquidware Labs\\FlexApp Packaging Automation\\fpa-packager.exe";
     if (!(try helper.test_file_path(path))) {
         std.debug.print("{s}\n", .{"fpa-packager.exe not found..."});
-        return;
+        return ExecuteError.FpaPackagerNotFound;
     }
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    var list = std.ArrayList([]const u8).init(allocator);
-    defer list.deinit();
+    var list: std.ArrayList([]const u8) = .empty;
+    defer list.deinit(allocator);
 
-    try list.append(path);
-    try list.append("package");
-    try list.append("/Name");
-    try list.append(name);
-    try list.append("/PackageVersion");
-    try list.append(package_version);
-    try list.append("/Path");
-    try list.append(output);
-    try list.append("/Installer");
-    try list.append(installer);
-    try list.append("/NoSystemRestore");
+    try list.append(allocator, path);
+    try list.append(allocator, "package");
+    try list.append(allocator, "/Name");
+    try list.append(allocator, name);
+    try list.append(allocator, "/PackageVersion");
+    try list.append(allocator, package_version);
+    try list.append(allocator, "/Path");
+    try list.append(allocator, output);
+    try list.append(allocator, "/Installer");
+    try list.append(allocator, installer);
+    try list.append(allocator, "/NoSystemRestore");
 
-    var list2 = std.ArrayList([]const u8).init(allocator);
-    defer list2.deinit();
+    var list2: std.ArrayList([]const u8) = .empty;
+    defer list2.deinit(allocator);
     for (extra) |pos| {
-        try list2.append(pos);
+        try list2.append(allocator, pos);
     }
     if (list2.items.len != 0) {
-        try list.append("/InstallerArgs");
+        try list.append(allocator, "/InstallerArgs");
         for (list2.items) |n|
-            try list.append(n);
+            try list.append(allocator, n);
     }
 
     const result = try std.process.Child.run(.{
         .allocator = allocator,
-        .argv = try list.toOwnedSlice(),
+        .argv = try list.toOwnedSlice(allocator),
         .max_output_bytes = 500 * 1024,
     });
     defer {
@@ -174,18 +175,23 @@ fn execute(name: []const u8, package_version: []const u8, output: []const u8, in
         .Exited => |code| {
             if (code == 0) {
                 std.debug.print("Output:\nSuccess Code: {}\n", .{code});
+                return "Success";
             } else {
                 std.debug.print("Process failed with code: {}\n", .{code});
+                return ExecuteError.ProcessFailed;
             }
         },
         .Signal => |sig| {
             std.debug.print("Process terminated by signal: {}\n", .{sig});
+            return ExecuteError.ProcessFailed;
         },
         .Stopped => |sig| {
             std.debug.print("Process stopped by signal: {}\n", .{sig});
+            return ExecuteError.ProcessFailed;
         },
         .Unknown => |code| {
             std.debug.print("Process terminated with unknown status: {}\n", .{code});
+            return ExecuteError.ProcessFailed;
         },
     }
 }
@@ -196,26 +202,25 @@ pub fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
     defer client.deinit();
 
     const uri = try std.Uri.parse(url);
-    const buf = try allocator.alloc(u8, 1024 * 1024 * 4);
-    defer allocator.free(buf);
-    var req = client.open(.GET, uri, .{
-        .server_header_buffer = buf,
-    }) catch {
+    var buf: [8192]u8 = undefined;
+    var req = client.request(.GET, uri, .{}) catch {
         return "unknown.txt";
     };
     defer req.deinit();
 
-    try req.send();
-    try req.finish();
-    try req.wait();
+    req.redirect_behavior = @enumFromInt(65000);
+    try req.sendBodiless();
+    var response = try req.receiveHead(&buf);
 
-    if (req.response.status != .ok) {
-        std.debug.print("Response Failed: {any}\n", .{req.response.status});
-        return "unknown.txt";
+    if (response.head.status != .ok) {
+        if (response.head.status != .found) {
+            std.debug.print("Response Failed: {any}\n", .{response.head.status});
+            return "unknown.txt";
+        }
     }
 
     var filename: []const u8 = "unknown.txt";
-    var iter = req.response.iterateHeaders();
+    var iter = response.head.iterateHeaders();
     while (iter.next()) |header| {
         // std.debug.print("Name:{s}, Value:{s}\n", .{ header.name, header.value });
         if (std.mem.containsAtLeast(u8, header.value, 1, "attachment; filename=")) {
@@ -235,7 +240,12 @@ pub fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
         while (filename1.next()) |f| {
             filename = f;
         }
+        filename = try helper.replace(allocator, filename, "?", "");
+        filename = try helper.replace(allocator, filename, "*", "");
+        filename = try helper.replace(allocator, filename, "|", "");
     }
+
+    const filename_final = try allocator.dupe(u8, filename);
 
     const file = try std.fs.cwd().createFile(
         filename,
@@ -244,14 +254,12 @@ pub fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
     defer file.close();
 
     var buffer: [8192]u8 = undefined;
-    while (true) {
-        const bytes_read = try req.reader().read(&buffer);
-        if (bytes_read == 0) break;
-        try file.writeAll(buffer[0..bytes_read]);
-    }
+    var file_writer: std.fs.File.Writer = .init(file, &buffer);
+    _ = try response.reader(&.{}).streamRemaining(&file_writer.interface);
+    // Flush remaining buffer just in case.
+    try file_writer.interface.flush();
 
-    filename = try allocator.dupe(u8, filename);
-    return filename;
+    return filename_final;
 }
 
 fn build_package(name: []const u8, package_version: []const u8, output: []const u8, installer: []const u8, extra: anytype) !void {
@@ -270,7 +278,11 @@ fn build_package(name: []const u8, package_version: []const u8, output: []const 
                 const final_name3 = try helper.replace(allocator, final_name2, "setup", "");
                 end_name = final_name3;
             }
-            try execute(end_name, package_version, output, filename, extra);
+            const result = execute(end_name, package_version, output, filename, extra) catch |err| {
+                std.debug.print("Error executing: {}\n", .{err});
+                return err;
+            };
+            std.debug.print("Execution result: {s}\n", .{result});
         } else {
             std.debug.print("{s}\n", .{"Failed to Download file"});
         }
@@ -284,6 +296,10 @@ fn build_package(name: []const u8, package_version: []const u8, output: []const 
             const final_name6 = try helper.replace(allocator, final_name5, "setup", "");
             end_name = final_name6;
         }
-        try execute(end_name, package_version, output, installer, extra);
+        const result = execute(end_name, package_version, output, installer, extra) catch |err| {
+            std.debug.print("Error executing: {}\n", .{err});
+            return err;
+        };
+        std.debug.print("Execution result: {s}\n", .{result});
     }
 }

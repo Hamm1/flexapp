@@ -36,3 +36,52 @@ test "checking test_file_path" {
         try testing.expect(check);
     }
 }
+
+test "checking test_file_path is false" {
+    if (builtin.os.tag == .windows) {
+        const check = try helper.test_file_path("C:/Windows/System32/drivers/etc/hosts100");
+        try testing.expect(!check);
+    } else {
+        const check = try helper.test_file_path("/etc/hosts100");
+        try testing.expect(!check);
+    }
+}
+
+test "checking get_last_item with add" {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    const check = try helper.get_last_item(allocator, "test.txt", ".", true);
+    try testing.expect(std.mem.eql(u8, check, ".txt"));
+}
+
+test "checking get_last_item without add" {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    const check = try helper.get_last_item(allocator, "test.txt", ".", false);
+    try testing.expect(std.mem.eql(u8, check, "txt"));
+}
+
+test "checking concat" {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    const check = try helper.concat(allocator, "test", ".txt");
+    try testing.expect(std.mem.eql(u8, check, "test.txt"));
+}
+
+test "checking failed execute installer not found" {
+    const result = main.execute("", "", "", "test", .{});
+    try testing.expectError(main.ExecuteError.InstallerNotFound, result);
+}
+
+test "checking failed execute fpa not found" {
+    if (builtin.os.tag == .windows) {
+        const result = main.execute("", "", "", "C:/Windows/System32/drivers/etc/hosts", .{});
+        try testing.expectError(main.ExecuteError.FpaPackagerNotFound, result);
+    } else {
+        const result = main.execute("", "", "", "/etc/hosts", .{});
+        try testing.expectError(main.ExecuteError.FpaPackagerNotFound, result);
+    }
+}

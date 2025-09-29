@@ -14,9 +14,23 @@ on:
       - RELEASE_NOTES.md
 
 jobs:
+  testing:
+    strategy:
+      matrix:
+        optimize: [ReleaseSafe, ReleaseFast]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: master
+          cache-key: ${{ matrix.optimize }}
+      - run: zig test src/root.zig -O${{ matrix.optimize }}
+
   once:
     name: Create GitHub release
     runs-on: 'ubuntu-latest'
+    needs: testing
     env:
       # For tag pushes, these will be the tag refs;
       # for main pushes they will be "refs/heads/main" and "main".

@@ -1,0 +1,184 @@
+name: smdc_portal
+
+on:
+  push:
+    # branches:
+    #   - 'main'
+    tags:
+      - 'v*'
+  # pull_request:
+    # branches:
+    #   - '**'
+  workflow_dispatch:
+    inputs:
+      tags: 
+        description: 'testing a tag'
+        required: true
+        type: string
+
+jobs:
+  testing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dagger Rust Tests
+        run: |
+          apt update && apt install -y curl unzip wget docker.io
+          
+          # Try to connect to Docker
+          if docker info; then
+            echo "Docker is working!"
+          else
+            echo "Docker daemon not accessible, checking alternatives..."
+            
+            # Check if we can start dockerd
+            echo "Attempting to start Docker daemon..."
+            dockerd --host=unix:///var/run/docker.sock &
+            sleep 10
+            docker info || echo "Still no Docker access"
+          fi
+
+          curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
+          export PATH="$HOME/.local/bin:$PATH";
+          cd .ci;
+          dagger call tests --src=../;
+
+  once:
+    needs: testing
+    name: Create Forgejo release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        run: |
+          # Extract tag name
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "Creating release for tag: $TAG_NAME"
+          
+          # Create release via API
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.FORGEJO_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"tag_name\": \"$TAG_NAME\",
+              \"name\": \"Release $TAG_NAME\",
+              \"body\": \"Automated Release by Forgejo Action CI\",
+              \"draft\": false,
+              \"prerelease\": false
+            }" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/releases"
+
+  build:
+    needs: once
+    strategy:
+      matrix:
+        os: [linux, windows]
+        platform: [ubuntu-latest]
+    
+    runs-on: ${{ matrix.platform }}
+        
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Dagger Linux
+        if: matrix.os == 'linux'
+        run: |
+          apt update && apt install -y curl unzip wget docker.io
+          
+          # Try to connect to Docker
+          if docker info; then
+            echo "Docker is working!"
+          else
+            echo "Docker daemon not accessible, checking alternatives..."
+            
+            # Check if we can start dockerd
+            echo "Attempting to start Docker daemon..."
+            dockerd --host=unix:///var/run/docker.sock &
+            sleep 10
+            docker info || echo "Still no Docker access"
+          fi
+            
+          curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
+          export PATH="$HOME/.local/bin:$PATH";
+          cd .ci
+          dagger call linux --src=../ export --path="$(dirname $(pwd))/exe/flexapp";
+
+      - name: Dagger Windows
+        if: matrix.os == 'windows'
+        run: |
+          apt update && apt install -y curl unzip wget docker.io
+          
+          # Try to connect to Docker
+          if docker info; then
+            echo "Docker is working!"
+          else
+            echo "Docker daemon not accessible, checking alternatives..."
+            
+            # Check if we can start dockerd
+            echo "Attempting to start Docker daemon..."
+            dockerd --host=unix:///var/run/docker.sock &
+            sleep 10
+            docker info || echo "Still no Docker access"
+          fi
+            
+          curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
+          export PATH="$HOME/.local/bin:$PATH";
+          cd .ci
+          dagger call windows --src=../ export --path="$(dirname $(pwd))/exe/flexapp.exe";
+
+      - name: Upload Release Asset (x64) Ubuntu
+        id: upload-release-asset-x64
+        if: matrix.os == 'linux'
+        run: |
+          # Get the release ID from the tag
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          
+          # Get release info to find the release ID
+          RELEASE_INFO=$(curl -s \
+            -H "Authorization: token ${{ secrets.FORGEJO_TOKEN }}" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/releases/tags/$TAG_NAME")
+          
+          RELEASE_ID=$(echo "$RELEASE_INFO" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+          
+          if [ -z "$RELEASE_ID" ]; then
+            echo "Could not find release ID for tag $TAG_NAME"
+            exit 1
+          fi
+          
+          echo "Uploading to release ID: $RELEASE_ID"
+          
+          curl --fail-with-body -v \
+            -X POST \
+            -H "Authorization: token ${{ secrets.FORGEJO_TOKEN }}" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@./exe/flexapp" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=flexapp"
+
+      - name: Upload Release Asset (x64) Windows
+        id: upload-release-asset-x64
+        if: matrix.os == 'windows'
+        run: |
+          # Get the release ID from the tag
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          
+          # Get release info to find the release ID
+          RELEASE_INFO=$(curl -s \
+            -H "Authorization: token ${{ secrets.FORGEJO_TOKEN }}" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/releases/tags/$TAG_NAME")
+          
+          RELEASE_ID=$(echo "$RELEASE_INFO" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+          
+          if [ -z "$RELEASE_ID" ]; then
+            echo "Could not find release ID for tag $TAG_NAME"
+            exit 1
+          fi
+          
+          echo "Uploading to release ID: $RELEASE_ID"
+          
+          curl --fail-with-body -v \
+            -X POST \
+            -H "Authorization: token ${{ secrets.FORGEJO_TOKEN }}" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@./exe/flexapp.exe" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=flexapp.exe"
