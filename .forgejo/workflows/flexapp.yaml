@@ -1,4 +1,4 @@
-name: smdc_portal
+name: flexapp
 
 on:
   push:
@@ -18,7 +18,7 @@ on:
 
 jobs:
   testing:
-    runs-on: ubuntu-latest
+    runs-on: codeberg-tiny
     steps:
       - uses: actions/checkout@v4
       - name: Dagger Rust Tests
@@ -46,7 +46,7 @@ jobs:
   once:
     needs: testing
     name: Create Forgejo release
-    runs-on: ubuntu-latest
+    runs-on: codeberg-tiny
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
@@ -74,7 +74,7 @@ jobs:
     strategy:
       matrix:
         os: [linux, windows]
-        platform: [ubuntu-latest]
+        platform: [codeberg-tiny]
     
     runs-on: ${{ matrix.platform }}
         
