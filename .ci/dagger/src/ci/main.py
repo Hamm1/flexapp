@@ -4,7 +4,7 @@ from dagger import dag, function, object_type
 
 @object_type
 class Ci:
-    zig_version = "0.15.1"
+    zig_version = "0.15.2"
     zig_binary = f"zig-x86_64-linux-{zig_version}"
 
     @function

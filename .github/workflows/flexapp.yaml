@@ -7,11 +7,11 @@ on:
     tags:
       - "release-v[0-9]+.[0-9]+.[0-9]+"
       - "release-v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - RELEASE_NOTES.md
+  # pull_request:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - RELEASE_NOTES.md
 
 jobs:
   testing:

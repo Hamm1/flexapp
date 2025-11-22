@@ -1,6 +1,7 @@
 const clap = @import("clap");
 const std = @import("std");
 const helper = @import("helper.zig");
+const download = @import("download.zig").download;
 
 const Version = struct {
     major: u16,
@@ -194,72 +195,6 @@ pub fn execute(name: []const u8, package_version: []const u8, output: []const u8
             return ExecuteError.ProcessFailed;
         },
     }
-}
-
-pub fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
-    std.debug.print("{s} {s}\n", .{ "Starting download for", url });
-    var client = std.http.Client{ .allocator = allocator };
-    defer client.deinit();
-
-    const uri = try std.Uri.parse(url);
-    var buf: [8192]u8 = undefined;
-    var req = client.request(.GET, uri, .{}) catch {
-        return "unknown.txt";
-    };
-    defer req.deinit();
-
-    req.redirect_behavior = @enumFromInt(65000);
-    try req.sendBodiless();
-    var response = try req.receiveHead(&buf);
-
-    if (response.head.status != .ok) {
-        if (response.head.status != .found) {
-            std.debug.print("Response Failed: {any}\n", .{response.head.status});
-            return "unknown.txt";
-        }
-    }
-
-    var filename: []const u8 = "unknown.txt";
-    var iter = response.head.iterateHeaders();
-    while (iter.next()) |header| {
-        // std.debug.print("Name:{s}, Value:{s}\n", .{ header.name, header.value });
-        if (std.mem.containsAtLeast(u8, header.value, 1, "attachment; filename=")) {
-            var filename1 = std.mem.splitSequence(u8, header.value, "filename=");
-            // Consume first iterator
-            _ = filename1.first();
-            filename = filename1.rest();
-            // Check for more stuff in filename
-            var filename2 = std.mem.splitSequence(u8, filename, ";");
-            filename = filename2.first();
-            break;
-        }
-    }
-
-    if (std.mem.eql(u8, filename, "unknown.txt")) {
-        var filename1 = std.mem.splitSequence(u8, url, "/");
-        while (filename1.next()) |f| {
-            filename = f;
-        }
-        filename = try helper.replace(allocator, filename, "?", "");
-        filename = try helper.replace(allocator, filename, "*", "");
-        filename = try helper.replace(allocator, filename, "|", "");
-    }
-
-    const filename_final = try allocator.dupe(u8, filename);
-
-    const file = try std.fs.cwd().createFile(
-        filename,
-        .{ .read = true },
-    );
-    defer file.close();
-
-    var buffer: [8192]u8 = undefined;
-    var file_writer: std.fs.File.Writer = .init(file, &buffer);
-    _ = try response.reader(&.{}).streamRemaining(&file_writer.interface);
-    // Flush remaining buffer just in case.
-    try file_writer.interface.flush();
-
-    return filename_final;
 }
 
 fn build_package(name: []const u8, package_version: []const u8, output: []const u8, installer: []const u8, extra: anytype) !void {

@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 ubuntu:24.04
+FROM ubuntu:24.04
 RUN apt update
 RUN apt install curl unzip zsh git sudo \
   build-essential wget libssl-dev software-properties-common \
@@ -10,8 +10,8 @@ RUN curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/bin
 
-ARG ZIG_VERSION_BINARY=zig-x86_64-linux-0.15.1
-ARG ZIG_VERSION=0.15.1
+ARG ZIG_VERSION_BINARY=zig-x86_64-linux-0.15.2
+ARG ZIG_VERSION=0.15.2
 ARG ZLS_VERSION=0.15.0
 # ARG ZIG_DOWNLOAD=https://ziglang.org/builds/$ZIG_VERSION.tar.xz
 ARG ZIG_DOWNLOAD=https://ziglang.org/download/$ZIG_VERSION/$ZIG_VERSION_BINARY.tar.xz

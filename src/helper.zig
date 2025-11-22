@@ -17,6 +17,20 @@ pub fn replace(allocator: std.mem.Allocator, haystack: []const u8, needle: []con
     }
     return result.toOwnedSlice(allocator);
 }
+pub fn replaceAll(allocator: std.mem.Allocator, haystack: []const u8, needle: []const u8, replacement: []const u8) ![]u8 {
+    var result: std.ArrayList(u8) = .empty;
+    defer result.deinit(allocator);
+    outer: for (haystack) |c| {
+        for (needle, 0..) |ctr, i| {
+            if (c == ctr) {
+                try result.append(allocator, replacement[i]);
+                continue :outer;
+            }
+        }
+        try result.append(allocator, c);
+    }
+    return result.toOwnedSlice(allocator);
+}
 
 pub fn test_file_path(path: []const u8) !bool {
     const file = std.fs.cwd().openFile(path, .{}) catch |err| {
