@@ -18,7 +18,7 @@ on:
 
 jobs:
   testing:
-    runs-on: codeberg-tiny
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Dagger Rust Tests
@@ -46,7 +46,7 @@ jobs:
   once:
     needs: testing
     name: Create Forgejo release
-    runs-on: codeberg-tiny
+    runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
@@ -74,7 +74,7 @@ jobs:
     strategy:
       matrix:
         os: [linux, windows]
-        platform: [codeberg-tiny]
+        platform: [ubuntu-latest]
     
     runs-on: ${{ matrix.platform }}
         

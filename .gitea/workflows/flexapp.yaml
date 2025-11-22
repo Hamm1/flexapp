@@ -1,4 +1,4 @@
-name: smdc_portal
+name: flexapp
 
 on:
   push:
@@ -18,20 +18,33 @@ on:
 
 jobs:
   testing:
-    strategy:
-      matrix:
-        optimize: [ReleaseSafe, ReleaseFast]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: mlugg/setup-zig@v2
-        with:
-          version: master
-          cache-key: ${{ matrix.optimize }}
-      - run: zig test src/root.zig -O${{ matrix.optimize }}
+      - name: Dagger Rust Tests
+        run: |
+          apt update && apt install -y curl unzip wget docker.io
+          
+          # Try to connect to Docker
+          if docker info; then
+            echo "Docker is working!"
+          else
+            echo "Docker daemon not accessible, checking alternatives..."
+            
+            # Check if we can start dockerd
+            echo "Attempting to start Docker daemon..."
+            dockerd --host=unix:///var/run/docker.sock &
+            sleep 10
+            docker info || echo "Still no Docker access"
+          fi
+
+          curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
+          export PATH="$HOME/.local/bin:$PATH";
+          cd .ci;
+          dagger call tests --src=../;
 
   once:
-    name: Create GitHub release
+    name: Create Gitea release
     runs-on: 'ubuntu-latest'
     needs: testing
     outputs:
@@ -46,7 +59,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
           body: |
-            Automated Release by GitHub Action CI
+            Automated Release by Gitea Action CI
           draft: false
           prerelease: false
 

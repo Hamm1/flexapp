@@ -3,6 +3,7 @@ const testing = std.testing;
 const main = @import("main.zig");
 const helper = @import("helper.zig");
 const builtin = @import("builtin");
+const download = @import("download.zig").download;
 
 export fn add(a: i32, b: i32) i32 {
     return a + b;
@@ -16,7 +17,7 @@ test "checking failed download" {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
-    try testing.expect(std.mem.eql(u8, try main.download(allocator, "https://durrrrr.io"), "unknown.txt"));
+    try testing.expect(std.mem.eql(u8, try download(allocator, "https://durrrrr.io"), "unknown.txt"));
 }
 
 test "checking replacer" {
@@ -84,4 +85,17 @@ test "checking failed execute fpa not found" {
         const result = main.execute("", "", "", "/etc/hosts", .{});
         try testing.expectError(main.ExecuteError.FpaPackagerNotFound, result);
     }
+}
+
+test "replace all function" {
+    const allocator = std.testing.allocator;
+
+    const original = "file?name*with<invalid|chars.txt";
+    const replaced = try helper.replaceAll(allocator, original, "?8<|*", "_____");
+    defer allocator.free(replaced);
+
+    std.debug.print("Original: {s}\n", .{original});
+    std.debug.print("Final: {s}\n", .{replaced});
+
+    try std.testing.expect(std.mem.eql(u8, replaced, "file_name_with_invalid_chars.txt"));
 }
