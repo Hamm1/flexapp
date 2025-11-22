@@ -15,7 +15,7 @@ pub fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
     const uri = try std.Uri.parse(url);
     var buf: [8192]u8 = undefined;
     var req = client.request(.GET, uri, .{
-        .redirect_behavior = .unhandled,
+        .redirect_behavior = @enumFromInt(65000),
         .keep_alive = false,
     }) catch |err| {
         std.debug.print("Error creating request: {}\n", .{err});
@@ -23,7 +23,7 @@ pub fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
     };
     defer req.deinit();
 
-    req.redirect_behavior = .unhandled;
+    req.redirect_behavior = @enumFromInt(65000);
     try req.sendBodiless();
     var response = try req.receiveHead(&buf);
 

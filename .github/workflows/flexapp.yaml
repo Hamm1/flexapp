@@ -30,6 +30,7 @@ jobs:
   once:
     name: Create GitHub release
     runs-on: 'ubuntu-latest'
+    environment: production
     needs: testing
     env:
       # For tag pushes, these will be the tag refs;
