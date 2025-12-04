@@ -1,0 +1,140 @@
+[env]
+
+[hooks]
+
+[settings]
+activate_aggressive = true
+aqua.cosign = false
+aqua.slsa = false
+experimental = true
+fetch_remote_versions_cache = "1d"
+jobs = 100
+lockfile = false
+python.compile = false
+quiet = false
+task_output = "quiet"
+unix_default_inline_shell_args = "bash -uc"
+windows_default_file_shell_args = "pwsh -c"
+
+[tools]
+dagger = '0.19.7'
+docker-cli = 'latest'
+python = "latest"
+uv = 'latest'
+zig = "0.15.2"
+
+[vars]
+
+[tasks."test"]
+run = """
+zig test src/root.zig
+"""
+
+[tasks."build"]
+run = """
+zig build -Doptimize=ReleaseFast
+"""
+
+[tasks."safe"]
+run = """
+zig build -Doptimize=ReleaseSafe
+"""
+
+[tasks."build_windows"]
+run = """
+zig build -Dtarget=x86_64-windows -Doptimize=ReleaseFast
+"""
+
+[tasks."build_windows_safe"]
+run = """
+zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSafe
+"""
+
+[tasks."clean"]
+shell = """
+{% if os_family() == "windows" %}pwsh -c{% else %}bash -c{% endif %}
+"""
+run = """
+{% set clean  = "ls -Path '.flox/cache','.flox/run','.flox/log','.flox/env/manifest.lock','zig-out','.zig-cache','out' -ErrorAction SilentlyContinue | rm -Recurse -Force" %}
+{% if os_family() != "windows" %}
+{% set clean  = "rm -rf ./.flox/cache ./.flox/run ./.flox/log ./.flox/env/manifest.lock zig-out .zig-cache out" %}
+{% endif %}
+{{ clean }}
+"""
+
+[tasks."dagger_windows"]
+run = """
+{% set output_path = cwd ~ "/out/flexapp.exe" %}
+{% if os_family() == "windows" %}
+cd .ci && pwsh -c Start-Process 'dagger' -ArgumentList 'call windows --src=../ export --path={{ output_path }}' -Wait -NoNewWindow
+{% else %}
+cd .ci && dagger call windows --src=../ export --path={{ output_path }}
+{% endif %}
+"""
+
+[tasks."dagger_linux"]
+run = """
+{% set output_path = cwd ~ "/out/flexapp" %}
+{% if os_family() == "windows" %}
+cd .ci && pwsh -c Start-Process 'dagger' -ArgumentList 'call windows --src=../ export --path={{ output_path }}' -Wait -NoNewWindow
+{% else %}
+cd .ci && dagger call windows --src=../ export --path={{ output_path }}
+{% endif %}
+"""
+
+[tasks."flox"]
+run = """
+{% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
+{{ sudo }} docker run --pull always -v {{cwd}}:/flexapp-v {{cwd}}/.flox/build/zshrc:/root/.zshrc -v /var/run/docker.sock:/var/run/docker.sock --name=flox -d -it ghcr.io/flox/flox || echo "Container Exists"
+{{ sudo }} docker start flox || echo "Container is already started..."
+@{{ sudo }} docker exec -it -w /hd_stack flox flox activate
+"""
+
+[tasks."flox_delete"]
+run = """
+{% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
+{{ sudo }} docker rm -f flox
+"""
+
+[tasks."code_server"]
+run = """
+{% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
+{% set workspace = "" %}{% if os_family() == "windows" %}{% set workspace = cwd %}{% else %}{% set workspace = "/workspace/flexapp" %}{% endif %}
+{{ sudo }} docker run -v /var/run/docker.sock:/var/run/docker.sock -v {{cwd}}:{{ workspace }} --name=code_server -p 443:443 -d matthewhambright/code_server:latest || echo "Container Exists"
+"""
+
+[tasks."code_server_use"]
+run = """
+{% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
+{{ sudo }} docker exec -it code_server zsh
+"""
+
+[tasks."code_server_delete"]
+run = """
+{% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
+{{ sudo }} docker rm -f code_server
+"""
+
+[tasks."codeberg_runners_up"]
+run = """
+{% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
+cd ./.ci/codeberg && {{ sudo }} docker compose up -d
+"""
+
+[tasks."codeberg_runners_down"]
+run = """
+{% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
+cd ./.ci/codeberg && {{ sudo }} docker compose down
+"""
+
+[tasks."gitea_runners_up"]
+run = """
+{% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
+cd ./.ci/gitea && {{ sudo }} docker compose up -d
+"""
+
+[tasks."gitea_runners_down"]
+run = """
+{% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
+cd ./.ci/gitea && {{ sudo }} docker compose down
+"""

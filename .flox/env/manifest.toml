@@ -10,7 +10,6 @@ version = 1
 # the `[install]` section.
 [install]
 python3.pkg-path = "python3"
-just.pkg-path = "just"
 zsh.pkg-path = "zsh"
 starship.pkg-path = "starship"
 docker.pkg-path = "docker"

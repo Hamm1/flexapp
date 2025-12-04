@@ -1,0 +1,63 @@
+version: '3'
+
+services:
+  runner:
+    image: gitea/act_runner:latest
+    container_name: gitea-runner
+    restart: always
+    networks:
+      - gitea
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./runner-data:/data
+    entrypoint: >
+      sh -c '
+          apk add --update nodejs npm docker
+          apk add --update docker openrc
+          apk add --update sudo curl
+          rc-update add docker boot
+        if [ ! -f /data/act_runner.yaml ]; then
+          /usr/local/bin/act_runner register \
+            --instance "https://gitea.com" \
+            --token "ap3vnogK2BJ6OR35siQolFonR7mLDOO6SSEBdrTS" \
+            --name "runner1" \
+            --labels "ubuntu-latest" \
+            --no-interactive
+        fi
+        /usr/local/bin/act_runner daemon
+      '
+
+  runner2:
+    image: gitea/act_runner:latest
+    container_name: gitea-runner2
+    restart: always
+    networks:
+      - gitea
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./runner-data:/data
+    entrypoint: >
+      sh -c '
+          apk add --update nodejs npm docker
+          apk add --update docker openrc
+          apk add --update sudo curl
+          rc-update add docker boot
+        if [ ! -f /data/act_runner.yaml ]; then
+          /usr/local/bin/act_runner register \
+            --instance "https://gitea.com" \
+            --token "ap3vnogK2BJ6OR35siQolFonR7mLDOO6SSEBdrTS" \
+            --name "runner2" \
+            --labels "ubuntu-latest" \
+            --no-interactive
+        fi
+        /usr/local/bin/act_runner daemon
+      '
+
+networks:
+  gitea:
+    name: gitea-network
+
+# volumes:
+#   gitea-data:
+#   gitea-db:
+#   runner-data:

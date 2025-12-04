@@ -12,13 +12,12 @@
 - Minimal Windows Build
 ```sh
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-choco install just docker-desktop dagger -y
-just dagger_windows
+choco install mise docker-desktop dagger -y
+mise dagger_windows
 ```
 
 - Minimal Linux Build
 ```sh
-sudo apt install -y docker-ce docker-ce-cli containerd.io
-curl -fsSL https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh
-just dagger_windows
+curl https://mise.run | sh
+mise dagger_windows
 ```
