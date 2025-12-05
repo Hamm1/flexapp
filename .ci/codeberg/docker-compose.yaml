@@ -23,7 +23,7 @@ services:
         if [ ! -f /data/.runner ]; then
           forgejo-runner register \
             --instance https://codeberg.org \
-            --token "P9HZIWJsA5dEGj7twizabgFDMcl1sXMQD4qf9WXK" \
+            --token ${RUNNER_TOKEN} \
             --name "docker-runner-1" \
             --labels "ubuntu-latest" \
             --no-interactive
@@ -58,7 +58,7 @@ services:
         if [ ! -f /data/.runner ]; then
           forgejo-runner register \
             --instance https://codeberg.org \
-            --token "P9HZIWJsA5dEGj7twizabgFDMcl1sXMQD4qf9WXK" \
+            --token ${RUNNER_TOKEN} \
             --name "docker-runner-2" \
             --labels "ubuntu-latest" \
             --no-interactive

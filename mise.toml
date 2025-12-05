@@ -118,7 +118,7 @@ run = """
 [tasks."codeberg_runners_up"]
 run = """
 {% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
-cd ./.ci/codeberg && {{ sudo }} docker compose up -d
+cd ./.ci/codeberg && {{ sudo }} docker compose --env-file .env up -d
 """
 
 [tasks."codeberg_runners_down"]
@@ -130,7 +130,7 @@ cd ./.ci/codeberg && {{ sudo }} docker compose down
 [tasks."gitea_runners_up"]
 run = """
 {% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
-cd ./.ci/gitea && {{ sudo }} docker compose up -d
+cd ./.ci/gitea && {{ sudo }} docker compose --env-file .env up -d
 """
 
 [tasks."gitea_runners_down"]
