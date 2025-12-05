@@ -19,7 +19,7 @@ services:
         if [ ! -f /data/act_runner.yaml ]; then
           /usr/local/bin/act_runner register \
             --instance "https://gitea.com" \
-            --token "ap3vnogK2BJ6OR35siQolFonR7mLDOO6SSEBdrTS" \
+            --token ${RUNNER_TOKEN} \
             --name "runner1" \
             --labels "ubuntu-latest" \
             --no-interactive
@@ -45,7 +45,7 @@ services:
         if [ ! -f /data/act_runner.yaml ]; then
           /usr/local/bin/act_runner register \
             --instance "https://gitea.com" \
-            --token "ap3vnogK2BJ6OR35siQolFonR7mLDOO6SSEBdrTS" \
+            --token ${RUNNER_TOKEN} \
             --name "runner2" \
             --labels "ubuntu-latest" \
             --no-interactive

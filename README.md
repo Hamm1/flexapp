@@ -12,7 +12,7 @@
 - Minimal Windows Build
 ```sh
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-choco install mise docker-desktop dagger -y
+choco install mise docker-desktop -y
 mise dagger_windows
 ```
 
