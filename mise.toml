@@ -22,6 +22,7 @@ docker-cli = 'latest'
 python = "latest"
 uv = 'latest'
 zig = "0.15.2"
+zls = "0.15.1"
 
 [vars]
 

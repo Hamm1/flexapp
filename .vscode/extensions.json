@@ -10,8 +10,8 @@
         "ms-python.debugpy",
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "ms-vscode.makefile-tools",
         "pkief.material-icon-theme",
+        "tamasfe.even-better-toml",
         "yzhang.markdown-all-in-one",
         "ziglang.vscode-zig"
     ]
