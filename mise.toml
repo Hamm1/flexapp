@@ -77,9 +77,9 @@ cd .ci && dagger call windows --src=../ export --path={{ output_path }}
 run = """
 {% set output_path = cwd ~ "/out/flexapp" %}
 {% if os_family() == "windows" %}
-cd .ci && pwsh -c Start-Process 'dagger' -ArgumentList 'call windows --src=../ export --path={{ output_path }}' -Wait -NoNewWindow
+cd .ci && pwsh -c Start-Process 'dagger' -ArgumentList 'call linux --src=../ export --path={{ output_path }}' -Wait -NoNewWindow
 {% else %}
-cd .ci && dagger call windows --src=../ export --path={{ output_path }}
+cd .ci && dagger call linux --src=../ export --path={{ output_path }}
 {% endif %}
 """
 
