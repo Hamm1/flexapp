@@ -3,21 +3,19 @@ const testing = std.testing;
 const main = @import("main.zig");
 const helper = @import("helper.zig");
 const builtin = @import("builtin");
-const download = @import("download.zig").download;
 
 export fn add(a: i32, b: i32) i32 {
     return a + b;
 }
 
-test "basic add functionality" {
-    try testing.expect(add(3, 7) == 10);
+test {
+    @import("std").testing.refAllDecls(@This());
+    _ = @import("./download.zig");
+    _ = @import("./execute.zig");
 }
 
-test "checking failed download" {
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-    try testing.expect(std.mem.eql(u8, try download(allocator, "https://durrrrr.io"), "unknown.txt"));
+test "basic add functionality" {
+    try testing.expect(add(3, 7) == 10);
 }
 
 test "checking replacer" {
@@ -70,21 +68,6 @@ test "checking concat" {
     const allocator = arena.allocator();
     const check = try helper.concat(allocator, "test", ".txt");
     try testing.expect(std.mem.eql(u8, check, "test.txt"));
-}
-
-test "checking failed execute installer not found" {
-    const result = main.execute("", "", "", "test", .{});
-    try testing.expectError(main.ExecuteError.InstallerNotFound, result);
-}
-
-test "checking failed execute fpa not found" {
-    if (builtin.os.tag == .windows) {
-        const result = main.execute("", "", "", "C:/Windows/System32/drivers/etc/hosts", .{});
-        try testing.expectError(main.ExecuteError.FpaPackagerNotFound, result);
-    } else {
-        const result = main.execute("", "", "", "/etc/hosts", .{});
-        try testing.expectError(main.ExecuteError.FpaPackagerNotFound, result);
-    }
 }
 
 test "replace all function" {

@@ -1,5 +1,7 @@
 const std = @import("std");
 const helper = @import("helper.zig");
+const testing = std.testing;
+
 pub fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
     std.debug.print("{s} {s}\n", .{ "Starting download for", url });
 
@@ -89,6 +91,13 @@ pub fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
     try file_writer.interface.flush();
 
     return filename_final;
+}
+
+test "checking failed download" {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    try testing.expect(std.mem.eql(u8, try download(allocator, "https://durrrrr.io"), "unknown.txt"));
 }
 
 test "download function" {

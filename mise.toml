@@ -3,6 +3,7 @@
 [hooks]
 
 [settings]
+auto_install = false
 activate_aggressive = true
 aqua.cosign = false
 aqua.slsa = false
