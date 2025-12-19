@@ -9,7 +9,7 @@ flexapp_build_linux:
     DOCKER_TLS_CERTDIR: ""
     DOCKER_HOST: tcp://docker:2375/
   services:
-    - name: docker:28.5.1-dind
+    - name: docker:29.1.3-dind
       alias: docker
   rules:
     - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v/'
@@ -35,7 +35,7 @@ flexapp_build_windows:
     DOCKER_TLS_CERTDIR: ""
     DOCKER_HOST: tcp://docker:2375/
   services:
-    - name: docker:28.5.1-dind
+    - name: docker:29.1.3-dind
       alias: docker
   rules:
     - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v/'
