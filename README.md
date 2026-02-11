@@ -21,3 +21,9 @@ mise dagger_windows
 curl https://mise.run | sh
 mise dagger_windows
 ```
+
+- Minimal Linux Build (Nix)
+```sh
+sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
+nix run .#build-windows-safe
+```

@@ -18,7 +18,7 @@ unix_default_inline_shell_args = "bash -uc"
 windows_default_file_shell_args = "pwsh -c"
 
 [tools]
-dagger = '0.19.7'
+dagger = '0.19.11'
 docker-cli = 'latest'
 python = "latest"
 uv = 'latest'
@@ -82,20 +82,6 @@ cd .ci && pwsh -c Start-Process 'dagger' -ArgumentList 'call linux --src=../ exp
 {% else %}
 cd .ci && dagger call linux --src=../ export --path={{ output_path }}
 {% endif %}
-"""
-
-[tasks."flox"]
-run = """
-{% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
-{{ sudo }} docker run --pull always -v {{cwd}}:/flexapp-v {{cwd}}/.flox/build/zshrc:/root/.zshrc -v /var/run/docker.sock:/var/run/docker.sock --name=flox -d -it ghcr.io/flox/flox || echo "Container Exists"
-{{ sudo }} docker start flox || echo "Container is already started..."
-@{{ sudo }} docker exec -it -w /hd_stack flox flox activate
-"""
-
-[tasks."flox_delete"]
-run = """
-{% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
-{{ sudo }} docker rm -f flox
 """
 
 [tasks."code_server"]
