@@ -7,11 +7,6 @@ on:
     tags:
       - "release-v[0-9]+.[0-9]+.[0-9]+"
       - "release-v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"
-  # pull_request:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - RELEASE_NOTES.md
 
 jobs:
   testing:
@@ -27,47 +22,40 @@ jobs:
           cache-key: ${{ matrix.optimize }}
       - run: zig test src/root.zig -O${{ matrix.optimize }}
 
-  once:
-    name: Create GitHub release
+  prepare:
+    name: Prepare release metadata
     runs-on: 'ubuntu-latest'
-    environment: production
     needs: testing
     env:
-      # For tag pushes, these will be the tag refs;
-      # for main pushes they will be "refs/heads/main" and "main".
       TRIGGER_TAG: ${{ github.ref }}
       TRIGGER_TAG_NAME: ${{ github.ref_name }}
-      IS_DRY_RUN: false
-      IS_DRAFT_RELEASE: false
       GIT_USERNAME: hamm1
       GIT_EMAIL: mlhambright1@gmail.com
-      RELEASE_TAG: ""
 
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_tag: ${{ steps.compute_tag.outputs.release_tag }}
+      is_pre_release: ${{ steps.compute_tag.outputs.is_pre_release }}
+      
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
           
       - name: Setup Git author information
         run: |
-          set -ue
           git config --global user.email "${GIT_EMAIL}"
           git config --global user.name "${GIT_USERNAME}"
       
-      - name: Preparing env variables
+      - name: Compute release tag
+        id: compute_tag
         run: |
           set -xue
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             echo "Triggered by tag push: ${GITHUB_REF}"
-            # For tag pushes, remove the "release-" prefix.
             RELEASE_TAG="${GITHUB_REF#*release-}"
           else
-            echo "Triggered by main push with changes to RELEASE_NOTES.md"
-            # Compute the new version by incrementing the patch of the latest published tag (vX.Y.Z)
+            echo "Triggered by main push"
             latest_tag=$(git tag --list "v[0-9]*.[0-9]*.[0-9]*" | sort -V | tail -n 1)
             echo "Latest published tag is: $latest_tag"
             if [ -z "$latest_tag" ]; then
@@ -78,107 +66,96 @@ jobs:
               patch=$((patch + 1))
               new_version="${major}.${minor}.${patch}"
             fi
-            # The published release tag should be prefixed with "v"
             RELEASE_TAG="v${new_version}"
           fi
 
-          # Determine if this is a pre-release (if the tag ends with -rcN)
           IS_PRE_RELEASE=false
           if echo "${RELEASE_TAG}" | grep -E -- '-rc[0-9]+$'; then
             IS_PRE_RELEASE=true
           fi
 
-          # Verify that the release tag does not already exist.
           if [[ -n $(git tag -l | grep -E -- '^'${RELEASE_TAG}) ]]; then
-            echo "::error::Release tag ${RELEASE_TAG} already exists in repository. Refusing to continue."
+            echo "::error::Release tag ${RELEASE_TAG} already exists"
             exit 1
           fi
 
-          # Export the variables for subsequent steps.
-          echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_ENV
-          echo "IS_PRE_RELEASE=${IS_PRE_RELEASE}" >> $GITHUB_ENV
+          echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+          echo "is_pre_release=${IS_PRE_RELEASE}" >> $GITHUB_OUTPUT
 
       - name: Creating the release tag
         run: |
-          set -ue
-          if [[ "$IS_DRY_RUN" == "true" ]]; then
-            echo "IS_DRY_RUN=${IS_DRY_RUN}"
-            exit 0
-          fi
-          echo "Creating release tag ${RELEASE_TAG}"
-          git tag ${RELEASE_TAG}
-          git push origin ${RELEASE_TAG}
+          echo "Creating release tag ${{ steps.compute_tag.outputs.release_tag }}"
+          git tag ${{ steps.compute_tag.outputs.release_tag }}
+          git push origin ${{ steps.compute_tag.outputs.release_tag }}
 
       - name: Deleting pushed tag
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          set -ue
           echo "Deleting pushed tag ${TRIGGER_TAG_NAME}"
           git tag -d ${TRIGGER_TAG_NAME}
           git push -d origin ${TRIGGER_TAG_NAME}
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          release_name: ${{ env.RELEASE_TAG }}
-          body_path: RELEASE_NOTES.md
-          draft: false
-          prerelease: false
-
   build:
-    needs: once
+    needs: prepare
     strategy:
       matrix:
-        #platform: [ubuntu-latest, windows-latest, macos-latest]
-        platform: [ubuntu-latest, ubuntu-latest]
+        job: [linux, windows]
     
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-latest
         
     steps:
       - uses: actions/checkout@v4
       
       - name: Dagger Linux
-        if: matrix.platform == 'ubuntu-latest' && strategy.job-index == 0
+        if: matrix.job == 'linux'
         run: |
-          sudo apt update && sudo apt install curl unzip wget;
-          curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
-          export PATH="$HOME/.local/bin:$PATH";
+          sudo apt update && sudo apt install curl unzip wget
+          curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh
+          export PATH="$HOME/.local/bin:$PATH"
           cd .ci
-          dagger call linux --src=../ export --path="$(dirname $(pwd))/exe/flexapp";
+          dagger call linux --src=../ export --path="$(dirname $(pwd))/exe/flexapp"
 
       - name: Dagger Windows
-        if: matrix.platform == 'ubuntu-latest' && strategy.job-index == 1
+        if: matrix.job == 'windows'
         run: |
-          sudo apt update && sudo apt install curl unzip wget;
-          curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
-          export PATH="$HOME/.local/bin:$PATH";
+          sudo apt update && sudo apt install curl unzip wget
+          curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh
+          export PATH="$HOME/.local/bin:$PATH"
           cd .ci
-          dagger call windows --src=../ export --path="$(dirname $(pwd))/exe/flexapp.exe";
+          dagger call windows --src=../ export --path="$(dirname $(pwd))/exe/flexapp.exe"
 
-      - name: Upload Release Asset (x64) Ubuntu
-        id: upload-release-asset-x64
-        if: matrix.platform == 'ubuntu-latest' && strategy.job-index == 0
-        uses: actions/upload-release-asset@v1
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.job }}-binary
+          path: ./exe/flexapp${{ matrix.job == 'windows' && '.exe' || '' }}
+
+  release:
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+          
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.once.outputs.upload_url }}
-          asset_path: ./exe/flexapp
-          asset_name: flexapp
-          asset_content_type: application/executable
-
-      - name: Upload Release Asset (x64) Windows
-        id: upload-release-asset-x64-windows
-        if: matrix.platform == 'ubuntu-latest' && strategy.job-index == 1
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.once.outputs.upload_url }}
-          asset_path: ./exe/flexapp.exe
-          asset_name: flexapp.exe
-          asset_content_type: application/executable
+          tag_name: ${{ needs.prepare.outputs.release_tag }}
+          name: ${{ needs.prepare.outputs.release_tag }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: ${{ needs.prepare.outputs.is_pre_release }}
+          files: |
+            ./artifacts/linux-binary/flexapp
+            ./artifacts/windows-binary/flexapp.exe
