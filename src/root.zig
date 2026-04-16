@@ -27,21 +27,23 @@ test "checking replacer" {
 }
 
 test "checking test_file_path" {
+    const io = std.Io.Threaded.global_single_threaded.io();
     if (builtin.os.tag == .windows) {
-        const check = try helper.test_file_path("C:/Windows/System32/drivers/etc/hosts");
+        const check = try helper.test_file_path(io, "C:/Windows/System32/drivers/etc/hosts");
         try testing.expect(check);
     } else {
-        const check = try helper.test_file_path("/etc/hosts");
+        const check = try helper.test_file_path(io, "/etc/hosts");
         try testing.expect(check);
     }
 }
 
 test "checking test_file_path is false" {
+    const io = std.Io.Threaded.global_single_threaded.io();
     if (builtin.os.tag == .windows) {
-        const check = try helper.test_file_path("C:/Windows/System32/drivers/etc/hosts100");
+        const check = try helper.test_file_path(io, "C:/Windows/System32/drivers/etc/hosts100");
         try testing.expect(!check);
     } else {
-        const check = try helper.test_file_path("/etc/hosts100");
+        const check = try helper.test_file_path(io, "/etc/hosts100");
         try testing.expect(!check);
     }
 }

@@ -6,6 +6,6 @@
   "token": "f02512139f3e1137bc79235531c5ba681428f7d5",
   "address": "https://codeberg.org",
   "labels": [
-    "ubuntu-latest:docker://node:22-bookworm"
+    "ubuntu-latest:docker://node:25-trixie"
   ]
 }

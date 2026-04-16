@@ -61,6 +61,8 @@
             docker
             python314
             uv
+            mise
+            neovim
           ];
           shellHook = ''
             export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH
