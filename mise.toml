@@ -18,11 +18,11 @@ unix_default_inline_shell_args = "bash -uc"
 windows_default_file_shell_args = "pwsh -c"
 
 [tools]
-dagger = '0.19.11'
+dagger = 'latest'
 docker-cli = 'latest'
 python = "latest"
 uv = 'latest'
-zig = "0.15.2"
+zig = "0.16.0"
 zls = "0.15.1"
 
 [vars]
@@ -87,8 +87,7 @@ cd .ci && dagger call linux --src=../ export --path={{ output_path }}
 [tasks."code_server"]
 run = """
 {% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
-{% set workspace = "" %}{% if os_family() == "windows" %}{% set workspace = cwd %}{% else %}{% set workspace = "/workspace/flexapp" %}{% endif %}
-{{ sudo }} docker run -v /var/run/docker.sock:/var/run/docker.sock -v {{cwd}}:{{ workspace }} --name=code_server -p 443:443 -d matthewhambright/code_server:latest || echo "Container Exists"
+{{ sudo }} docker run -v /var/run/docker.sock:/var/run/docker.sock -v {{cwd}}:/workspace/flexapp --name=code_server -p 443:443 -d matthewhambright/code_server:latest || echo "Container Exists"
 """
 
 [tasks."code_server_use"]

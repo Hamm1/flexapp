@@ -4,3 +4,4 @@
 /out
 /.ansible
 flake.lock
+/zig-pkg

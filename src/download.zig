@@ -2,15 +2,15 @@ const std = @import("std");
 const helper = @import("helper.zig");
 const testing = std.testing;
 
-pub fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
+pub fn download(io: std.Io, allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
     std.debug.print("{s} {s}\n", .{ "Starting download for", url });
 
     var client = std.http.Client{
         .allocator = allocator,
+        .io = io,
     };
     defer client.deinit();
 
-    try client.ca_bundle.rescan(allocator);
     // defer client.ca_bundle.deinit(allocator);
     // std.debug.print("CA bundle size: {}\n", .{client.ca_bundle.bytes.items.len});
 
@@ -62,12 +62,13 @@ pub fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
     }
     const filename_final = try allocator.dupe(u8, filename);
 
-    const file = try std.fs.cwd().createFile(
+    const file = try std.Io.Dir.cwd().createFile(
+        io,
         filename,
         .{ .read = true },
     );
     allocator.free(filename);
-    defer file.close();
+    defer file.close(io);
 
     var buffer: [64]u8 = undefined;
     const decompress_buffer: []u8 = switch (response.head.content_encoding) {
@@ -82,29 +83,35 @@ pub fn download(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
     var decompress: std.http.Decompress = undefined;
     const reader = response.readerDecompressing(&transfer_buffer, &decompress, decompress_buffer);
 
-    var file_writer: std.fs.File.Writer = .init(file, &buffer);
+    var file_writer = file.writer(io, &buffer);
     _ = reader.streamRemaining(&file_writer.interface) catch |err| {
         std.debug.print("Error during download/decompression: {}\n", .{err});
         return "unknown.txt";
     };
-    // Flush remaining buffer just in case.
     try file_writer.interface.flush();
+    // Flush remaining buffer just in case.
+    file_writer.interface.flush() catch |err| {
+        std.debug.print("Error flushing interface: {}\n", .{err});
+        return "unknown.txt";
+    };
 
     return filename_final;
 }
 
 test "checking failed download" {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const io = std.Io.Threaded.global_single_threaded.io();
     defer arena.deinit();
     const allocator = arena.allocator();
-    try testing.expect(std.mem.eql(u8, try download(allocator, "https://durrrrr.io"), "unknown.txt"));
+    try testing.expect(std.mem.eql(u8, try download(io, allocator, "https://durrrrr.io"), "unknown.txt"));
 }
 
 test "download function" {
     const testing_allocator = std.testing.allocator;
+    const io = std.Io.Threaded.global_single_threaded.io();
 
     const url = "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi";
-    const filename = try download(testing_allocator, url);
+    const filename = try download(io, testing_allocator, url);
     defer testing_allocator.free(filename);
     std.debug.print("Downloaded file: {s}\n", .{filename});
 }

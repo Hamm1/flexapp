@@ -21,6 +21,7 @@
 				"astral-sh.ty",
         		"charliermarsh.ruff",
 				"hverlin.mise-vscode",
+				"jnoortheen.nix-ide",
 				"mads-hartmann.bash-ide-vscode",
 				"aaron-bond.better-comments",
 				"ms-azuretools.vscode-docker",

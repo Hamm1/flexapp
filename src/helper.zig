@@ -32,12 +32,12 @@ pub fn replaceAll(allocator: std.mem.Allocator, haystack: []const u8, needle: []
     return result.toOwnedSlice(allocator);
 }
 
-pub fn test_file_path(path: []const u8) !bool {
-    const file = std.fs.cwd().openFile(path, .{}) catch |err| {
+pub fn test_file_path(io: std.Io, path: []const u8) !bool {
+    const file = std.Io.Dir.cwd().openFile(io, path, .{}) catch |err| {
         if (err == error.FileNotFound) return false;
         return err;
     };
-    defer file.close();
+    defer file.close(io);
     return true;
 }
 

@@ -23,7 +23,7 @@ const CURRENT_VERSION = Version{
     .patch = 0,
 };
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
 
@@ -46,42 +46,42 @@ pub fn main() !void {
     // This is optional. You can also pass `.{}` to `clap.parse` if you don't
     // care about the extra information `Diagnostics` provides.
     var diag = clap.Diagnostic{};
-    var res = clap.parse(clap.Help, &params, clap.parsers.default, .{
+    var res = clap.parse(clap.Help, &params, clap.parsers.default, init.minimal.args, .{
         .diagnostic = &diag,
         .allocator = arena.allocator(),
     }) catch |err| {
         // Report useful error and exit
-        try diag.reportToFile(.stderr(), err);
+        try diag.reportToFile(init.io, .stderr(), err);
         return err;
     };
     defer res.deinit();
 
     if (res.args.help != 0) {
-        return clap.helpToFile(.stderr(), clap.Help, &params, .{});
+        return clap.helpToFile(init.io, .stderr(), clap.Help, &params, .{});
     }
     if (res.args.version != 0) {
         std.debug.print("{f}\n", .{CURRENT_VERSION});
     }
     if (res.args.file) |f| {
-        std.debug.print("file exists = {}\n", .{try helper.test_file_path(f)});
+        std.debug.print("file exists = {}\n", .{try helper.test_file_path(init.io, f)});
     }
     if (res.args.download) |d| {
         const allocator = arena.allocator();
-        _ = try download(allocator, d);
+        _ = try download(init.io, allocator, d);
     }
     if (res.args.name) |n| {
         if (res.args.installer) |i| {
             if (res.args.packageversion) |p| {
                 if (res.args.output) |o| {
-                    try build_package(n, p, o, i, res.args.extra);
+                    try build_package(init.io, n, p, o, i, res.args.extra);
                 } else {
-                    try build_package(n, p, "./", i, res.args.extra);
+                    try build_package(init.io, n, p, "./", i, res.args.extra);
                 }
             } else {
                 if (res.args.output) |o| {
-                    try build_package(n, "0.0.0.0", o, i, res.args.extra);
+                    try build_package(init.io, n, "0.0.0.0", o, i, res.args.extra);
                 } else {
-                    try build_package(n, "0.0.0.0", "./", i, res.args.extra);
+                    try build_package(init.io, n, "0.0.0.0", "./", i, res.args.extra);
                 }
             }
         } else {
@@ -90,9 +90,9 @@ pub fn main() !void {
     } else if (res.args.packageversion) |p| {
         if (res.args.installer) |i| {
             if (res.args.output) |o| {
-                try build_package("", p, o, i, res.args.extra);
+                try build_package(init.io, "", p, o, i, res.args.extra);
             } else {
-                try build_package("", p, "./", i, res.args.extra);
+                try build_package(init.io, "", p, "./", i, res.args.extra);
             }
         } else {
             std.debug.print("{s}\n", .{"Argument for --installer is required"});
@@ -100,15 +100,15 @@ pub fn main() !void {
     } else if (res.args.installer) |i| {
         if (res.args.packageversion) |p| {
             if (res.args.output) |o| {
-                try build_package("", p, o, i, res.args.extra);
+                try build_package(init.io, "", p, o, i, res.args.extra);
             } else {
-                try build_package("", p, "./", i, res.args.extra);
+                try build_package(init.io, "", p, "./", i, res.args.extra);
             }
         } else {
             if (res.args.output) |o| {
-                try build_package("", "0.0.0.0", o, i, res.args.extra);
+                try build_package(init.io, "", "0.0.0.0", o, i, res.args.extra);
             } else {
-                try build_package("", "0.0.0.0", "./", i, res.args.extra);
+                try build_package(init.io, "", "0.0.0.0", "./", i, res.args.extra);
             }
         }
     }
@@ -117,14 +117,14 @@ pub fn main() !void {
     }
 }
 
-fn build_package(name: []const u8, package_version: []const u8, output: []const u8, installer: []const u8, extra: anytype) !void {
+fn build_package(io: std.Io, name: []const u8, package_version: []const u8, output: []const u8, installer: []const u8, extra: anytype) !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
     var end_name = name;
 
     if (std.mem.containsAtLeast(u8, installer, 1, "http://") or std.mem.containsAtLeast(u8, installer, 1, "https://")) {
-        const filename = try download(allocator, installer);
+        const filename = try download(io, allocator, installer);
         if (!(std.mem.eql(u8, filename, "unknown.txt"))) {
             if (std.mem.eql(u8, name, "")) {
                 const new_name = try helper.get_last_item(allocator, filename, ".", true);
@@ -133,7 +133,7 @@ fn build_package(name: []const u8, package_version: []const u8, output: []const 
                 const final_name3 = try helper.replace(allocator, final_name2, "setup", "");
                 end_name = final_name3;
             }
-            const result = execute(end_name, package_version, output, filename, extra) catch |err| {
+            const result = execute(io, end_name, package_version, output, filename, extra) catch |err| {
                 std.debug.print("Error executing: {}\n", .{err});
                 return err;
             };
@@ -151,7 +151,7 @@ fn build_package(name: []const u8, package_version: []const u8, output: []const 
             const final_name6 = try helper.replace(allocator, final_name5, "setup", "");
             end_name = final_name6;
         }
-        const result = execute(end_name, package_version, output, installer, extra) catch |err| {
+        const result = execute(io, end_name, package_version, output, installer, extra) catch |err| {
             std.debug.print("Error executing: {}\n", .{err});
             return err;
         };

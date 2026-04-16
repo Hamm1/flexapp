@@ -8,16 +8,41 @@ pub const ExecuteError = error{
     InstallerNotFound,
     FpaPackagerNotFound,
     ProcessFailed,
-} || std.process.Child.RunError || std.mem.Allocator.Error || std.fs.File.OpenError;
+    Canceled,
+    SystemResources,
+    IsDir,
+    WouldBlock,
+    AccessDenied,
+    Unexpected,
+    FileTooBig,
+    NoSpaceLeft,
+    DeviceBusy,
+    PermissionDenied,
+    NoDevice,
+    FileBusy,
+    ProcessFdQuotaExceeded,
+    SystemFdQuotaExceeded,
+    PathAlreadyExists,
+    SymLinkLoop,
+    FileNotFound,
+    NotDir,
+    ReadOnlyFileSystem,
+    NetworkNotFound,
+    NameTooLong,
+    BadPathName,
+    PipeBusy,
+    AntivirusInterference,
+    FileLocksUnsupported,
+} || std.mem.Allocator.Error;
 
-pub fn execute(name: []const u8, package_version: []const u8, output: []const u8, installer: []const u8, extra: anytype) ExecuteError![]const u8 {
+pub fn execute(io: std.Io, name: []const u8, package_version: []const u8, output: []const u8, installer: []const u8, extra: anytype) anyerror![]const u8 {
     // std.debug.print("{s}\n", .{name});
-    if (!(try helper.test_file_path(installer))) {
+    if (!(try helper.test_file_path(io, installer))) {
         std.debug.print("{s} not found...\n", .{installer});
         return ExecuteError.InstallerNotFound;
     }
     const path = "C:\\program files (x86)\\Liquidware Labs\\FlexApp Packaging Automation\\fpa-packager.exe";
-    if (!(try helper.test_file_path(path))) {
+    if (!(try helper.test_file_path(io, path))) {
         std.debug.print("{s}\n", .{"fpa-packager.exe not found..."});
         return ExecuteError.FpaPackagerNotFound;
     }
@@ -51,17 +76,19 @@ pub fn execute(name: []const u8, package_version: []const u8, output: []const u8
             try list.append(allocator, n);
     }
 
-    const result = try std.process.Child.run(.{
-        .allocator = allocator,
+    const result = try std.process.run(allocator, io, .{
         .argv = try list.toOwnedSlice(allocator),
-        .max_output_bytes = 500 * 1024,
+        .stdout_limit = @enumFromInt(500 * 1024),
+        .stderr_limit = @enumFromInt(500 * 1024),
     });
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
     defer {
         allocator.free(result.stdout);
         allocator.free(result.stderr);
     }
     switch (result.term) {
-        .Exited => |code| {
+        .exited => |code| {
             if (code == 0) {
                 std.debug.print("Output:\nSuccess Code: {}\n", .{code});
                 return "Success";
@@ -70,15 +97,15 @@ pub fn execute(name: []const u8, package_version: []const u8, output: []const u8
                 return ExecuteError.ProcessFailed;
             }
         },
-        .Signal => |sig| {
+        .signal => |sig| {
             std.debug.print("Process terminated by signal: {}\n", .{sig});
             return ExecuteError.ProcessFailed;
         },
-        .Stopped => |sig| {
+        .stopped => |sig| {
             std.debug.print("Process stopped by signal: {}\n", .{sig});
             return ExecuteError.ProcessFailed;
         },
-        .Unknown => |code| {
+        .unknown => |code| {
             std.debug.print("Process terminated with unknown status: {}\n", .{code});
             return ExecuteError.ProcessFailed;
         },
@@ -86,16 +113,18 @@ pub fn execute(name: []const u8, package_version: []const u8, output: []const u8
 }
 
 test "checking failed execute installer not found" {
-    const result = execute("", "", "", "test", .{});
+    const io = std.Io.Threaded.global_single_threaded.io();
+    const result = execute(io, "", "", "", "test", .{});
     try testing.expectError(ExecuteError.InstallerNotFound, result);
 }
 
 test "checking failed execute fpa not found" {
+    const io = std.Io.Threaded.global_single_threaded.io();
     if (builtin.os.tag == .windows) {
-        const result = execute("", "", "", "C:/Windows/System32/drivers/etc/hosts", .{});
+        const result = execute(io, "", "", "", "C:/Windows/System32/drivers/etc/hosts", .{});
         try testing.expectError(ExecuteError.FpaPackagerNotFound, result);
     } else {
-        const result = execute("", "", "", "/etc/hosts", .{});
+        const result = execute(io, "", "", "", "/etc/hosts", .{});
         try testing.expectError(ExecuteError.FpaPackagerNotFound, result);
     }
 }
