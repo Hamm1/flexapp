@@ -26,6 +26,13 @@
             zig test src/root.zig
           '';
 
+          test-fast = pkgs.writeShellScriptBin "zig-test-fast" ''
+            zig test src/root.zig -OReleaseFast
+          '';
+          test-safe = pkgs.writeShellScriptBin "zig-test-safe" ''
+            zig test src/root.zig -OReleaseSafe
+          '';
+
           build = pkgs.writeShellScriptBin "zig-build" ''
             zig build -Doptimize=ReleaseFast
           '';
@@ -43,7 +50,7 @@
           '';
 
           clean = pkgs.writeShellScriptBin "clean" ''
-            rm -rf flake.lock zig-out .zig-cache out
+            rm -rf zig-out .zig-cache out zig-pkg
           '';
         };
 
@@ -65,6 +72,25 @@
             neovim
           ];
           shellHook = ''
+            # Bootstrap LazyVim if not already configured
+            _nvim_cfg="$HOME/.config/nvim"
+            _lsp="$_nvim_cfg/lua/plugins/lsp.lua"
+            _diag="$_nvim_cfg/after/plugin/diagnostics.lua"
+
+            if [ ! -f "$_lsp" ] && [ ! -f "$_diag" ]; then
+              echo "Setting up LazyVim..."
+              rm -rf "$_nvim_cfg"
+              git clone https://github.com/LazyVim/starter.git "$_nvim_cfg"
+              rm -rf "$_nvim_cfg/.git"
+
+              git clone --depth 1 https://github.com/Hamm1/devbox /tmp/devbox-cfg
+              mkdir -p "$_nvim_cfg/lua/plugins" "$_nvim_cfg/after/plugin"
+              cp /tmp/devbox-cfg/lsp.lua "$_lsp"
+              cp /tmp/devbox-cfg/diagnostics.lua "$_diag"
+              rm -rf /tmp/devbox-cfg
+
+              echo "LazyVim configured."
+            fi
             export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH
             echo "Flexapp Development Environment"
             echo ""
