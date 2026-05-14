@@ -23,7 +23,7 @@ docker-cli = 'latest'
 python = "latest"
 uv = 'latest'
 zig = "0.16.0"
-zls = "0.15.1"
+zls = "0.16.0"
 
 [vars]
 
@@ -124,4 +124,22 @@ cd ./.ci/gitea && {{ sudo }} docker compose --env-file .env up -d
 run = """
 {% set sudo = "" %}{% if os_family() != "windows" %}{% set sudo = "sudo " %}{% endif %}
 cd ./.ci/gitea && {{ sudo }} docker compose down
+"""
+
+[tasks."nix_clean"]
+run = """
+{% set sudo = "" %}{% if os_family() != "unix" %}{% set sudo = "sudo " %}{% endif %}
+{{ sudo }} nix-store --gc || nix-store --gc
+"""
+
+[tasks."nix"]
+run = """
+{% set sudo = "" %}{% if os_family() != "unix" %}{% set sudo = "sudo " %}{% endif %}
+nix develop --extra-experimental-features nix-command --extra-experimental-features flakes -c zsh
+"""
+
+[tasks."nix_update"]
+run = """
+{% set sudo = "" %}{% if os_family() != "unix" %}{% set sudo = "sudo " %}{% endif %}
+nix flake --extra-experimental-features nix-command --extra-experimental-features flakes update
 """
