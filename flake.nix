@@ -23,30 +23,30 @@
       {
         packages = {
           test = pkgs.writeShellScriptBin "zig-test" ''
-            zig test src/root.zig
+            ${pkgs.zig}/bin/zig test src/root.zig
           '';
 
           test-fast = pkgs.writeShellScriptBin "zig-test-fast" ''
-            zig test src/root.zig -OReleaseFast
+            ${pkgs.zig}/bin/zig test src/root.zig -OReleaseFast
           '';
           test-safe = pkgs.writeShellScriptBin "zig-test-safe" ''
-            zig test src/root.zig -OReleaseSafe
+            ${pkgs.zig}/bin/zig test src/root.zig -OReleaseSafe
           '';
 
           build = pkgs.writeShellScriptBin "zig-build" ''
-            zig build -Doptimize=ReleaseFast
+            ${pkgs.zig}/bin/zig build -Doptimize=ReleaseFast
           '';
 
           safe = pkgs.writeShellScriptBin "zig-safe" ''
-            zig build -Doptimize=ReleaseSafe
+            ${pkgs.zig}/bin/zig build -Doptimize=ReleaseSafe
           '';
 
           build-windows = pkgs.writeShellScriptBin "zig-build-windows" ''
-            zig build -Dtarget=x86_64-windows -Doptimize=ReleaseFast
+            ${pkgs.zig}/bin/zig build -Dtarget=x86_64-windows -Doptimize=ReleaseFast
           '';
 
           build-windows-safe = pkgs.writeShellScriptBin "zig-build-windows-safe" ''
-            zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSafe
+            ${pkgs.zig}/bin/zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSafe
           '';
 
           clean = pkgs.writeShellScriptBin "clean" ''
