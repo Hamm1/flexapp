@@ -28,4 +28,5 @@ jobs:
           curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
           export PATH="$HOME/.local/bin:$PATH";
           cd .ci;
-          dagger call tests --src=../;
+          dagger call nix --src=../ --cmd=test --file="/etc/hostname";
+          dagger call nix --src=../ --cmd=build --file="zig-out/bin/flexapp" export --path="$(dirname $(pwd))/test/flexapp";

@@ -23,30 +23,30 @@
       {
         packages = {
           test = pkgs.writeShellScriptBin "zig-test" ''
-            ${pkgs.zig}/bin/zig test src/root.zig
+            ${pkgs.zig_0_17}/bin/zig test src/root.zig
           '';
 
           test-fast = pkgs.writeShellScriptBin "zig-test-fast" ''
-            ${pkgs.zig}/bin/zig test src/root.zig -OReleaseFast
+            ${pkgs.zig_0_17}/bin/zig test src/root.zig -OReleaseFast
           '';
           test-safe = pkgs.writeShellScriptBin "zig-test-safe" ''
-            ${pkgs.zig}/bin/zig test src/root.zig -OReleaseSafe
+            ${pkgs.zig_0_17}/bin/zig test src/root.zig -OReleaseSafe
           '';
 
           build = pkgs.writeShellScriptBin "zig-build" ''
-            ${pkgs.zig}/bin/zig build -Doptimize=ReleaseFast
+            ${pkgs.zig_0_17}/bin/zig build -Doptimize=ReleaseFast
           '';
 
           safe = pkgs.writeShellScriptBin "zig-safe" ''
-            ${pkgs.zig}/bin/zig build -Doptimize=ReleaseSafe
+            ${pkgs.zig_0_17}/bin/zig build -Doptimize=ReleaseSafe
           '';
 
           build-windows = pkgs.writeShellScriptBin "zig-build-windows" ''
-            ${pkgs.zig}/bin/zig build -Dtarget=x86_64-windows -Doptimize=ReleaseFast
+            ${pkgs.zig_0_17}/bin/zig build -Dtarget=x86_64-windows -Doptimize=ReleaseFast
           '';
 
           build-windows-safe = pkgs.writeShellScriptBin "zig-build-windows-safe" ''
-            ${pkgs.zig}/bin/zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSafe
+            ${pkgs.zig_0_17}/bin/zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSafe
           '';
 
           clean = pkgs.writeShellScriptBin "clean" ''
@@ -57,6 +57,8 @@
         devShells.default = pkgs.mkShell {
           buildInputs = packages ++ [
             self.packages.${system}.test
+            self.packages.${system}.test-fast
+            self.packages.${system}.test-safe
             self.packages.${system}.build
             self.packages.${system}.safe
             self.packages.${system}.build-windows
@@ -64,9 +66,9 @@
             self.packages.${system}.clean
           ];
           nativeBuildInputs = with pkgs; [
-            zig
+            zig_0_17
             docker
-            python314
+            python315
             uv
             mise
             neovim
@@ -91,7 +93,7 @@
 
               echo "LazyVim configured."
             fi
-            export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH
+            export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath libraries}:''${LD_LIBRARY_PATH:-}
             echo "Flexapp Development Environment"
             echo ""
             echo "Available commands:"
