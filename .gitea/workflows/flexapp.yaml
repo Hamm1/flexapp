@@ -41,7 +41,8 @@ jobs:
           curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
           export PATH="$HOME/.local/bin:$PATH";
           cd .ci;
-          dagger call tests --src=../;
+          dagger call nix --src=../ --cmd=test --file="/etc/hostname";
+          dagger call nix --src=../ --cmd=build --file="zig-out/bin/flexapp" export --path="$(dirname $(pwd))/test/flexapp";
 
   once:
     name: Create Gitea release
@@ -82,7 +83,7 @@ jobs:
           curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
           export PATH="$HOME/.local/bin:$PATH";
           cd .ci
-          dagger call linux --src=../ export --path="$(dirname $(pwd))/exe/flexapp";
+          dagger call nix --src=../ --cmd=safe --file="zig-out/bin/flexapp" export --path="$(dirname $(pwd))/exe/flexapp";
 
       - name: Dagger Windows
         if: matrix.os == 'windows'
@@ -91,7 +92,7 @@ jobs:
           curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh;
           export PATH="$HOME/.local/bin:$PATH";
           cd .ci
-          dagger call windows --src=../ export --path="$(dirname $(pwd))/exe/flexapp.exe";
+          dagger call nix --src=../ --cmd=build-windows-safe --file="zig-out/bin/flexapp.exe" export --path="$(dirname $(pwd))/exe/flexapp.exe";
 
       - name: Upload Release Asset (x64) Ubuntu
         id: upload-release-asset-x64

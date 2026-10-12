@@ -8,7 +8,7 @@
 - VSCode
   - https://code.visualstudio.com/sha/download?build=stable&os=win32-x64
 - PuTTY
-  - https://the.earth.li/~sgtatham/putty/latest/w64/putty-64bit-0.83-installer.msi
+  - https://the.earth.li/~sgtatham/putty/0.85/w64/putty-64bit-0.85-installer.msi
 
 # Command
 ```pwsh

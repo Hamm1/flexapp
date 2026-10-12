@@ -2,6 +2,7 @@
     .name = .flexapp,
     .version = "0.0.1",
     .fingerprint = 0xc34ab0134053f63c,
+    .minimum_zig_version = "0.17.0",
 
     // This field is optional.
     // Each dependency must either provide a `url` and `hash`, or a `path`.
@@ -10,8 +11,8 @@
     // internet connectivity.
     .dependencies = .{
         .clap = .{
-            .url = "https://github.com/Hejsil/zig-clap/archive/refs/tags/0.12.0.tar.gz",
-            .hash = "clap-0.12.0-oBajB7foAQDqlSwaSG5g0yq7xGbQARUsBk5T64gAOqP5",
+            .url = "https://github.com/Hejsil/zig-clap/archive/05faf3905e8548f5cc269a8836e154065e70128d.tar.gz",
+            .hash = "clap-0.12.0-oBajB4XpAQCF1WRKnD5KOKPsnwwT_NNdAJ7Ww3irYJac",
         },
     },
     .paths = .{
